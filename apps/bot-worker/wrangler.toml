@@ -1,0 +1,10 @@
+name = "yordamchi-ai-worker"
+main = "src/index.ts"
+compatibility_date = "2026-03-27"
+workers_dev = true
+
+[triggers]
+crons = ["* * * * *"]
+
+[observability.logs]
+enabled = true

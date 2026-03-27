@@ -1,0 +1,13 @@
+node_modules/
+.pnpm-store
+dist
+.wrangler
+.turbo
+.DS_Store
+.env
+.env.*
+!.env.example
+coverage
+*.log
+apps/miniapp/.vite
+worker.secrets.env

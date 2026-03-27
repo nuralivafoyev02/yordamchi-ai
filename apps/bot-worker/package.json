@@ -1,0 +1,24 @@
+{
+  "name": "@yordamchi/bot-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wrangler deploy --dry-run",
+    "dev": "wrangler dev src/index.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "@yordamchi/shared": "workspace:*",
+    "hono": "^4.7.4",
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250303.0",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.5.0"
+  }
+}

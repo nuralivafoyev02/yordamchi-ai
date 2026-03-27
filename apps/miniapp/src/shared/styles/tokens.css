@@ -1,0 +1,55 @@
+:root {
+  --font-display: "Space Grotesk", "Avenir Next", "Segoe UI Variable", sans-serif;
+  --font-body: "Manrope", "Avenir", "Segoe UI Variable", sans-serif;
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --shadow-soft: 0 20px 50px rgba(16, 42, 67, 0.12);
+  --shadow-card: 0 16px 36px rgba(15, 23, 42, 0.08);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+}
+
+:root,
+:root[data-theme="blue"] {
+  --bg: #f4f8ff;
+  --bg-muted: rgba(255, 255, 255, 0.78);
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: #ffffff;
+  --text: #112033;
+  --text-muted: #5f728a;
+  --border: rgba(83, 106, 136, 0.16);
+  --accent: #1f72ff;
+  --accent-soft: rgba(31, 114, 255, 0.14);
+  --accent-strong: #0f5be3;
+  --success: #19905f;
+  --warning: #c57c00;
+  --danger: #d64949;
+}
+
+:root[data-theme="gold"] {
+  --bg: #fff8eb;
+  --bg-muted: rgba(255, 249, 236, 0.8);
+  --surface: rgba(255, 252, 243, 0.92);
+  --surface-strong: #fffef8;
+  --text: #25180a;
+  --text-muted: #7b6647;
+  --border: rgba(159, 128, 56, 0.18);
+  --accent: #d8a322;
+  --accent-soft: rgba(216, 163, 34, 0.16);
+  --accent-strong: #b98614;
+  --success: #207956;
+  --warning: #b67b00;
+  --danger: #c74b3c;
+}
