@@ -49,9 +49,9 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 
 <style scoped>
 .profile-hero {
-  min-height: 216px;
+  min-height: 168px;
   overflow: hidden;
-  padding: 18px 18px 20px;
+  padding: 14px 14px 16px;
   position: relative;
 }
 
@@ -63,7 +63,7 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 }
 
 .profile-hero__glow--gold {
-  background: rgba(240, 193, 82, 0.5);
+  background: color-mix(in srgb, var(--accent) 46%, transparent);
   height: 160px;
   left: -74px;
   top: 12px;
@@ -71,7 +71,7 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 }
 
 .profile-hero__glow--teal {
-  background: rgba(26, 176, 143, 0.34);
+  background: color-mix(in srgb, var(--success) 30%, transparent);
   bottom: 8px;
   height: 150px;
   right: -70px;
@@ -85,52 +85,52 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 }
 
 .profile-hero__header h2 {
-  font-family: var(--font-display);
-  font-size: 23px;
-  line-height: 1.05;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
+  line-height: 1.1;
   margin: 0;
 }
 
 .profile-hero__center {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   justify-items: center;
-  margin-top: 14px;
+  margin-top: 10px;
   text-align: center;
 }
 
 .profile-hero__avatar {
   align-items: center;
-  border: 3px solid rgba(240, 193, 82, 0.34);
+  border: 3px solid color-mix(in srgb, var(--accent) 32%, transparent);
   border-radius: 999px;
-  color: #ffefb4;
+  color: var(--accent-strong);
   display: inline-flex;
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 700;
-  height: 82px;
+  height: 62px;
   justify-content: center;
-  width: 82px;
+  width: 62px;
 }
 
 .profile-hero__center strong {
-  font-family: var(--font-display);
-  font-size: clamp(18px, 5vw, 28px);
-  line-height: 1.1;
-  max-width: 14ch;
+  font-size: clamp(16px, 4.6vw, 22px);
+  font-weight: var(--weight-title);
+  line-height: 1.15;
+  max-width: 16ch;
 }
 
 .profile-hero__meta {
-  background: rgba(70, 58, 31, 0.45);
-  border: 1px solid rgba(240, 193, 82, 0.28);
-  border-radius: 22px;
-  color: #f5df9f;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 16px;
+  color: var(--accent-strong);
   display: grid;
   gap: 4px;
   justify-items: center;
   max-width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   width: min(100%, 520px);
 }
 
@@ -138,16 +138,16 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: var(--weight-interactive);
   gap: 8px;
   justify-content: center;
   line-height: 1.35;
 }
 
 .profile-hero__meta-id {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: var(--weight-interactive);
   line-height: 1.3;
 }
 
@@ -161,8 +161,8 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 }
 
 .profile-hero :deep(.badge) {
-  font-size: 11px;
-  padding: 5px 10px;
+  font-size: 10px;
+  padding: 3px 8px;
 }
 
 @media (max-width: 420px) {

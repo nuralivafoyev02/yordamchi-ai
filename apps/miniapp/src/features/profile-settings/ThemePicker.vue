@@ -50,25 +50,26 @@ const { text } = useText();
 <style scoped>
 .theme-card {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
 }
 
 .theme-card__head p {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .theme-card__head h3 {
-  font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .theme-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, 1fr);
 }
 
@@ -77,9 +78,9 @@ const { text } = useText();
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 6px;
-  min-height: 92px;
-  padding: 12px;
+  gap: 4px;
+  min-height: 84px;
+  padding: 10px;
   text-align: left;
 }
 
@@ -93,20 +94,20 @@ const { text } = useText();
 }
 
 .theme-option > span {
-  font-family: var(--font-display);
-  font-size: 15px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .theme-option > small {
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .theme-option__swatch {
   border-radius: 999px;
   display: inline-block;
-  height: 28px;
-  width: 28px;
+  height: 22px;
+  width: 22px;
 }
 
 .theme-option__swatch--classic {

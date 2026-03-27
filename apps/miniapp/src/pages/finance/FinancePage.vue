@@ -6,6 +6,7 @@ import BaseCard from '../../shared/components/BaseCard.vue';
 import BaseEmptyState from '../../shared/components/BaseEmptyState.vue';
 import BaseModal from '../../shared/components/BaseModal.vue';
 import StatusBadge from '../../shared/components/StatusBadge.vue';
+import { useToast } from '../../composables/useToast';
 import { apiClient } from '../../shared/api/client';
 import { useSessionStore } from '../../app/stores/session';
 import { useText } from '../../shared/composables/useText';
@@ -25,6 +26,7 @@ type ActivityFilter = 'all' | 'expense' | 'income';
 
 const sessionStore = useSessionStore();
 const { locale, text } = useText();
+const toast = useToast();
 
 const activeFilter = ref<ActivityFilter>('all');
 const financeError = ref('');
@@ -291,9 +293,17 @@ async function submitDebtPayment() {
       paidAt: new Date().toISOString(),
     });
     await Promise.all([sessionStore.refreshBootstrap(), loadFinanceSummary()]);
+    toast.show({
+      message: text('common.saved'),
+      variant: 'success',
+    });
     selectedDebt.value = null;
   } catch (error) {
     paymentError.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: paymentError.value,
+      variant: 'error',
+    });
   }
 }
 
@@ -506,31 +516,34 @@ watch(
 <style scoped>
 .page {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .page__header {
   align-items: start;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: space-between;
 }
 
 .page__header p {
-  color: var(--text-muted);
-  margin: 0 0 8px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .page__header h1 {
-  font-family: var(--font-display);
-  font-size: clamp(34px, 9vw, 42px);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .page__actions {
   align-items: center;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   justify-items: end;
 }
 
@@ -540,8 +553,8 @@ watch(
   border: 1px solid var(--border);
   border-radius: 999px;
   display: flex;
-  gap: 12px;
-  padding: 6px;
+  gap: 8px;
+  padding: 4px;
 }
 
 .month-switcher button {
@@ -549,7 +562,29 @@ watch(
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text);
+  color: var(--tg-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.month-switcher strong {
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  min-width: 106px;
+  text-align: center;
+}
+
+.page__plus {
+  align-items: center;
+  background: var(--tg-button);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--tg-button) 26%, transparent);
+  color: var(--tg-button-text);
   cursor: pointer;
   display: inline-flex;
   font-size: 20px;
@@ -558,29 +593,9 @@ watch(
   width: 36px;
 }
 
-.month-switcher strong {
-  min-width: 122px;
-  text-align: center;
-}
-
-.page__plus {
-  align-items: center;
-  background: var(--accent);
-  border: none;
-  border-radius: 999px;
-  box-shadow: 0 12px 28px rgba(var(--accent-rgb), 0.28);
-  color: var(--accent-contrast);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 28px;
-  height: 50px;
-  justify-content: center;
-  width: 50px;
-}
-
 .insight-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -595,12 +610,13 @@ watch(
 }
 
 .insight-card strong {
-  font-size: var(--text-lg);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .panel-card {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .panel-card__header {
@@ -611,35 +627,40 @@ watch(
 }
 
 .panel-card__header p {
-  color: var(--text-muted);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .panel-card__header h2 {
-  font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .panel-card__placeholder {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-body);
   text-align: center;
 }
 
 .filter-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .filter-chip {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text-muted);
+  color: var(--tg-hint);
   cursor: pointer;
-  min-height: 38px;
-  padding: 0 14px;
+  font-size: var(--text-body);
+  min-height: 30px;
+  padding: 0 12px;
 }
 
 .filter-chip--active {
@@ -651,7 +672,7 @@ watch(
 .activity-group-list,
 .debt-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .activity-group {
@@ -666,18 +687,22 @@ watch(
 }
 
 .activity-group__head small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .activity-item {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-top: 1px solid var(--divider);
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 14px;
+  min-height: 52px;
+  padding: 10px 0;
+}
+
+.activity-group .activity-item:first-of-type {
+  border-top: none;
 }
 
 .activity-item__icon {
@@ -686,11 +711,11 @@ watch(
   border-radius: 999px;
   color: var(--warning);
   display: inline-flex;
-  font-size: 18px;
-  font-weight: 700;
-  height: 40px;
+  font-size: 16px;
+  font-weight: var(--weight-interactive);
+  height: 36px;
   justify-content: center;
-  width: 40px;
+  width: 36px;
 }
 
 .activity-item__icon--income {
@@ -700,15 +725,23 @@ watch(
 
 .activity-item__copy {
   display: grid;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.activity-item__copy strong {
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .activity-item__copy small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .activity-item__amount {
-  font-size: var(--text-md);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .activity-item__amount--income {
@@ -720,8 +753,8 @@ watch(
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px 14px;
 }
 
 .debt-item__head,
@@ -734,40 +767,42 @@ watch(
 
 .debt-item__copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .debt-item__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .debt-item__amount {
-  font-size: var(--text-lg);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .debt-item__footer small,
 .sheet-hero small,
 .payment-account small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .sheet-hero {
   display: grid;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 
 .sheet-hero h3 {
-  font-family: var(--font-display);
-  font-size: 30px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-title);
   margin: 0;
 }
 
 .sheet-grid {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -776,27 +811,28 @@ watch(
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 4px;
+  padding: 10px 12px;
 }
 
 .sheet-stat span,
 .sheet-field span {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
 }
 
 .sheet-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sheet-field input {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text);
-  min-height: 52px;
+  color: var(--tg-text);
+  min-height: 40px;
   padding: 0 14px;
 }
 
@@ -805,12 +841,13 @@ watch(
   border: 1px solid rgba(var(--accent-rgb), 0.22);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 6px;
-  padding: 14px;
+  gap: 4px;
+  padding: 10px 12px;
 }
 
 .page__error {
   color: var(--danger);
+  font-size: var(--text-xs);
   margin: 0;
 }
 

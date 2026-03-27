@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 interface TabItem {
   icon: 'finance' | 'home' | 'profile';
@@ -10,6 +11,7 @@ interface TabItem {
 const props = defineProps<{
   items: TabItem[];
 }>();
+const route = useRoute();
 
 const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
   finance: [
@@ -28,75 +30,81 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 </script>
 
 <template>
-  <nav class="tabs">
-    <router-link
-      v-for="item in props.items"
-      :key="item.to"
-      :to="item.to"
-      class="tabs__item"
-      active-class="tabs__item--active"
-    >
-      <svg class="tabs__icon" fill="none" viewBox="0 0 24 24">
-        <path
-          v-for="path in iconPaths[item.icon]"
-          :key="path"
-          :d="path"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-        />
-      </svg>
-      <span>{{ item.label }}</span>
-    </router-link>
+  <nav class="tabs-shell">
+    <div class="tabs">
+      <router-link
+        v-for="item in props.items"
+        :key="item.to"
+        :to="item.to"
+        :aria-current="route.path === item.to ? 'page' : undefined"
+        :class="['tabs__item', { 'tabs__item--active': route.path === item.to }]"
+      >
+        <svg class="tabs__icon" fill="none" viewBox="0 0 24 24">
+          <path
+            v-for="path in iconPaths[item.icon]"
+            :key="path"
+            :d="path"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          />
+        </svg>
+        <span>{{ item.label }}</span>
+      </router-link>
+    </div>
   </nav>
 </template>
 
 <style scoped>
+.tabs-shell {
+  bottom: 0;
+  left: 0;
+  padding: 0 12px calc(var(--safe-bottom) + 8px);
+  position: fixed;
+  right: 0;
+  z-index: var(--nav-z);
+}
+
 .tabs {
   align-items: center;
-  background: #202023;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  bottom: 14px;
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in srgb, var(--tg-bg) 92%, var(--tg-secondary-bg) 8%);
+  border-top: 1px solid color-mix(in srgb, var(--tg-hint) 20%, transparent);
+  box-shadow: 0 -1px 8px color-mix(in srgb, var(--tg-text) 6%, transparent);
   display: grid;
   gap: 6px;
   grid-template-columns: repeat(3, 1fr);
-  left: 14px;
-  padding: 8px 10px;
-  position: fixed;
-  right: 14px;
-  z-index: 20;
+  margin: 0 auto;
+  max-width: 460px;
+  padding: 8px 10px 0;
 }
 
 .tabs__item {
   align-items: center;
-  border-radius: 16px;
-  color: var(--text-muted);
+  border-radius: 14px;
+  color: var(--tg-hint);
   display: grid;
   gap: 4px;
   justify-items: center;
-  min-height: 46px;
-  padding: 4px;
+  min-height: 48px;
+  padding: 4px 6px 8px;
   text-align: center;
+  transition: background 120ms ease, color 120ms ease;
 }
 
 .tabs__icon {
-  height: 18px;
-  width: 18px;
+  height: 22px;
+  width: 22px;
 }
 
 .tabs__item span {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: var(--weight-interactive);
+  line-height: 1.1;
 }
 
 .tabs__item--active {
-  color: var(--accent-strong);
-}
-
-.tabs__item--active .tabs__icon {
-  filter: drop-shadow(0 0 10px rgba(var(--accent-rgb), 0.18));
+  background: color-mix(in srgb, var(--tg-button) 16%, transparent);
+  color: var(--tg-button);
 }
 </style>

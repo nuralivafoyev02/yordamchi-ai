@@ -69,7 +69,7 @@ async function loadCalendar() {
 
     selectedDate.value = preferredDate;
   } catch (error) {
-    calendarError.value = error instanceof Error ? error.message : 'Unable to load calendar';
+    calendarError.value = error instanceof Error ? error.message : text('errors.generic');
   }
 }
 
@@ -171,23 +171,25 @@ watch(
 <style scoped>
 .page {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .page__header {
   align-items: start;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
 }
 
 .page__header h1 {
-  font-family: var(--font-display);
-  font-size: 32px;
-  margin: 0 0 8px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
+  margin: 0 0 4px;
 }
 
 .page__header p {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-body);
   margin: 0;
   max-width: 28ch;
 }
@@ -200,20 +202,20 @@ watch(
   align-items: center;
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  color: var(--text);
+  border-radius: 10px;
+  color: var(--tg-text);
   cursor: pointer;
   display: inline-flex;
-  font-size: 28px;
-  height: 44px;
+  font-size: 20px;
+  height: 36px;
   justify-content: center;
   line-height: 1;
-  width: 44px;
+  width: 36px;
 }
 
 .plans-card {
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
 .plans-card__header {
@@ -223,14 +225,16 @@ watch(
 }
 
 .plans-card__header p {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .plans-card__header h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
@@ -240,17 +244,17 @@ watch(
   border: 1px solid var(--border);
   border-radius: 999px;
   display: inline-flex;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  height: 32px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
+  height: 24px;
   justify-content: center;
-  min-width: 32px;
-  padding: 0 10px;
+  min-width: 24px;
+  padding: 0 8px;
 }
 
 .plans-list {
   display: grid;
-  gap: 12px;
+  gap: 0;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -258,28 +262,33 @@ watch(
 
 .plans-list li {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-top: 1px solid var(--divider);
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px;
+  min-height: 52px;
+  padding: 10px 0;
+}
+
+.plans-list li:first-child {
+  border-top: none;
 }
 
 .plans-list strong {
   display: block;
-  font-size: var(--text-md);
-  margin-bottom: 4px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  margin-bottom: 2px;
 }
 
 .plans-list small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .page__error {
   color: var(--danger);
-  font-size: var(--text-sm);
-  margin-top: -6px;
+  font-size: var(--text-xs);
+  margin-top: -4px;
 }
 </style>

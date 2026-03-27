@@ -73,82 +73,94 @@ function toneClass(kind: CalendarDayItem['kind']) {
 <style scoped>
 .drawer {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .drawer__header {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .drawer__header p {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .drawer__header h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .drawer__actions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.drawer__actions :deep(.button) {
+  max-height: 36px;
+  min-height: 36px;
 }
 
 .drawer__list {
   display: grid;
-  gap: 12px;
 }
 
 .day-item {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-top: 1px solid var(--divider);
   display: flex;
-  gap: 14px;
-  padding: 15px 16px;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 0;
+}
+
+.day-item:first-child {
+  border-top: none;
 }
 
 .day-item__dot {
   border-radius: 999px;
   display: inline-block;
-  flex: 0 0 10px;
-  height: 10px;
-  width: 10px;
+  flex: 0 0 36px;
+  height: 36px;
+  width: 36px;
 }
 
 .day-item__dot--info {
-  background: var(--accent);
+  background: color-mix(in srgb, var(--info) 16%, transparent);
 }
 
 .day-item__dot--success {
-  background: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, transparent);
 }
 
 .day-item__dot--warning {
-  background: var(--warning);
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
 }
 
 .day-item__dot--danger {
-  background: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
 }
 
 .day-item__copy {
   display: grid;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .day-item__copy strong {
-  font-size: var(--text-md);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .day-item__copy small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 @media (min-width: 420px) {

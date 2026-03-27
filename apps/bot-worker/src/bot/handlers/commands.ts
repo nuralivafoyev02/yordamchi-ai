@@ -1,11 +1,11 @@
-import { t, type AppLocale } from '@yordamchi/shared';
+import { t } from '@yordamchi/shared';
 import { miniAppKeyboard } from '../keyboards/common';
 import { helpMessage, summaryMessage } from '../messages/formatter';
 import { hasRegisteredPhone, promptPhoneRegistration, resolveTelegramUserContext } from './registration';
 import type { AppContext } from '../../core/app-context';
 import type { TelegramMessage } from '../../core/telegram/types';
 
-export async function handleCommand(app: AppContext, message: TelegramMessage, _locale: AppLocale) {
+export async function handleCommand(app: AppContext, message: TelegramMessage) {
   const chatId = message.chat.id;
   const command = message.text?.split(' ')[0] ?? '';
   const context = await resolveTelegramUserContext(app, message);

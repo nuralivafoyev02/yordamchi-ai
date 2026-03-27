@@ -150,7 +150,7 @@ const calendarCells = computed(() => {
 <style scoped>
 .calendar-card {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .calendar-card__top {
@@ -160,40 +160,42 @@ const calendarCells = computed(() => {
 }
 
 .calendar-card__top p {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .calendar-card__top h2 {
-  font-family: var(--font-display);
-  font-size: 30px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .calendar-card__nav {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .calendar-card__nav button {
   align-items: center;
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  color: var(--text);
+  border-radius: 10px;
+  color: var(--tg-text);
   cursor: pointer;
   display: inline-flex;
-  font-size: 18px;
-  height: 42px;
+  font-size: 16px;
+  height: 32px;
   justify-content: center;
-  width: 42px;
+  width: 32px;
 }
 
 .calendar-card__hero {
   align-items: stretch;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(0, 1fr) minmax(140px, 0.9fr);
 }
 
@@ -201,9 +203,9 @@ const calendarCells = computed(() => {
 .calendar-card__summary {
   background: var(--surface-strong);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  min-height: 120px;
-  padding: 18px;
+  border-radius: 16px;
+  min-height: 104px;
+  padding: 14px;
 }
 
 .calendar-card__date {
@@ -213,14 +215,13 @@ const calendarCells = computed(() => {
 
 .calendar-card__date span,
 .calendar-card__summary small {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .calendar-card__date strong {
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 700;
+  font-size: 42px;
+  font-weight: var(--weight-title);
   line-height: 1;
 }
 
@@ -231,8 +232,8 @@ const calendarCells = computed(() => {
 }
 
 .calendar-card__summary p {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: var(--weight-interactive);
   line-height: 1.2;
   margin: 0;
 }
@@ -240,10 +241,10 @@ const calendarCells = computed(() => {
 .calendar-card__grid-shell {
   background: var(--surface-soft);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 16px;
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .calendar-card__weekdays,
@@ -254,36 +255,37 @@ const calendarCells = computed(() => {
 }
 
 .calendar-card__weekdays span {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
   text-align: center;
 }
 
 .calendar-card__placeholder {
   display: block;
-  min-height: 38px;
+  min-height: 34px;
 }
 
 .calendar-card__day {
   align-items: center;
   background: transparent;
   border: none;
-  border-radius: 14px;
-  color: var(--text);
+  border-radius: 10px;
+  color: var(--tg-text);
   cursor: pointer;
   display: inline-flex;
-  font-weight: 600;
-  height: 38px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  height: 34px;
   justify-content: center;
   margin: 0 auto;
   position: relative;
-  width: 38px;
+  width: 34px;
 }
 
 .calendar-card__day--active {
-  background: var(--accent);
-  color: #fff;
+  background: var(--tg-button);
+  color: var(--tg-button-text);
 }
 
 .calendar-card__day--marked::after {
@@ -297,6 +299,12 @@ const calendarCells = computed(() => {
 }
 
 .calendar-card__day--active.calendar-card__day--marked::after {
-  background: #fff;
+  background: var(--tg-button-text);
+}
+
+@media (max-width: 420px) {
+  .calendar-card__hero {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

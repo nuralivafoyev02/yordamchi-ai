@@ -54,7 +54,7 @@ function closeMiniApp() {
 }
 
 .gate-card__glow--gold {
-  background: rgba(240, 193, 82, 0.42);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
   height: 220px;
   left: -80px;
   top: 36px;
@@ -62,7 +62,7 @@ function closeMiniApp() {
 }
 
 .gate-card__glow--teal {
-  background: rgba(26, 176, 143, 0.3);
+  background: color-mix(in srgb, var(--success) 28%, transparent);
   bottom: 70px;
   height: 220px;
   right: -100px;
@@ -71,33 +71,33 @@ function closeMiniApp() {
 
 .gate-card__content {
   display: grid;
-  gap: 16px;
-  padding: 28px 24px;
+  gap: 12px;
+  padding: 20px 16px;
   position: relative;
   z-index: 1;
 }
 
 .gate-card__eyebrow {
   color: var(--accent-strong);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.18em;
+  font-size: var(--text-section);
+  font-weight: var(--weight-interactive);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .gate-card__content h1 {
-  font-family: var(--font-display);
-  font-size: clamp(30px, 9vw, 42px);
-  line-height: 1.05;
+  font-size: clamp(20px, 6vw, 26px);
+  font-weight: var(--weight-title);
+  line-height: 1.1;
   margin: 0;
-  max-width: 12ch;
+  max-width: 15ch;
 }
 
 .gate-card__description,
 .gate-card__hint {
-  color: var(--text-muted);
-  font-size: var(--text-md);
-  line-height: 1.5;
+  color: var(--tg-hint);
+  font-size: var(--text-body);
+  line-height: 1.45;
   margin: 0;
   max-width: 34ch;
 }
@@ -118,12 +118,12 @@ function closeMiniApp() {
   gap: 8px;
   grid-template-columns: 28px minmax(0, 1fr);
   list-style: none;
-  padding: 15px 16px;
+  padding: 10px 12px;
 }
 
 .gate-card__steps li::before {
   align-items: center;
-  background: rgba(var(--accent-rgb), 0.16);
+  background: var(--accent-soft);
   border-radius: 999px;
   color: var(--accent-strong);
   content: counter(list-item);

@@ -5,9 +5,9 @@
 <style scoped>
 .loading-block {
   animation: pulse 1.3s infinite ease-in-out;
-  background: linear-gradient(90deg, #252529, #2d2d31, #252529);
+  background: linear-gradient(90deg, var(--surface), var(--surface-strong), var(--surface));
   border-radius: var(--radius-md);
-  height: 88px;
+  height: 72px;
 }
 
 @keyframes pulse {

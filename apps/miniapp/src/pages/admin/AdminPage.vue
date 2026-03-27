@@ -4,22 +4,26 @@ import BaseButton from '../../shared/components/BaseButton.vue';
 import BaseCard from '../../shared/components/BaseCard.vue';
 import BaseEmptyState from '../../shared/components/BaseEmptyState.vue';
 import SectionHeader from '../../shared/components/SectionHeader.vue';
+import { useToast } from '../../composables/useToast';
 import { apiClient } from '../../shared/api/client';
 import { useText } from '../../shared/composables/useText';
 
 const { text } = useText();
+const toast = useToast();
 const overview = ref<Record<string, number> | null>(null);
 const form = reactive({
   months: 1,
   telegramUserId: '',
 });
-const status = ref('');
 
 async function loadOverview() {
   try {
     overview.value = (await apiClient.get('/api/v1/admin/overview')) as Record<string, number>;
   } catch (error) {
-    status.value = error instanceof Error ? error.message : 'Unable to load admin overview';
+    toast.show({
+      message: error instanceof Error ? error.message : text('errors.generic'),
+      variant: 'error',
+    });
   }
 }
 
@@ -29,10 +33,16 @@ async function grantPremium() {
       months: form.months,
       targetTelegramUserId: Number(form.telegramUserId),
     });
-    status.value = 'Premium granted successfully.';
+    toast.show({
+      message: text('admin.premiumGranted'),
+      variant: 'success',
+    });
     await loadOverview();
   } catch (error) {
-    status.value = error instanceof Error ? error.message : 'Unable to grant premium';
+    toast.show({
+      message: error instanceof Error ? error.message : text('errors.generic'),
+      variant: 'error',
+    });
   }
 }
 
@@ -47,11 +57,11 @@ onMounted(() => {
       <SectionHeader :subtitle="text('admin.diagnostics')" :title="text('admin.title')" />
       <div v-if="overview" class="overview-grid">
         <article>
-          <span>Total users</span>
+          <span>{{ text('admin.totalUsers') }}</span>
           <strong>{{ overview.totalUsers }}</strong>
         </article>
         <article>
-          <span>Active premium</span>
+          <span>{{ text('admin.activePremiumUsers') }}</span>
           <strong>{{ overview.activePremiumUsers }}</strong>
         </article>
         <article>
@@ -70,16 +80,15 @@ onMounted(() => {
       <SectionHeader :subtitle="text('admin.grantPremium')" :title="text('common.premium')" />
       <div class="admin-form">
         <label>
-          <span>Telegram user ID</span>
+          <span>{{ text('admin.userIdLabel') }}</span>
           <input v-model="form.telegramUserId" inputmode="numeric" />
         </label>
         <label>
-          <span>Months</span>
+          <span>{{ text('admin.monthsLabel') }}</span>
           <input v-model.number="form.months" inputmode="numeric" type="number" />
         </label>
         <BaseButton block @click="grantPremium">{{ text('admin.grantPremium') }}</BaseButton>
-        <p class="hint">Use the Telegram numeric user ID. The Worker resolves the internal user automatically.</p>
-        <p v-if="status" class="status">{{ status }}</p>
+        <p class="hint">{{ text('admin.grantHint') }}</p>
       </div>
     </BaseCard>
   </div>
@@ -88,55 +97,55 @@ onMounted(() => {
 <style scoped>
 .page {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .overview-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(2, 1fr);
 }
 
 article {
   background: var(--surface-strong);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: 12px;
 }
 
 span {
-  color: var(--text-muted);
+  color: var(--tg-hint);
   display: block;
-  font-size: var(--text-sm);
-  margin-bottom: 8px;
+  font-size: var(--text-xs);
+  margin-bottom: 4px;
 }
 
 strong {
-  font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
 }
 
 .admin-form {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 label {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 input {
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  min-height: 48px;
+  color: var(--tg-text);
+  min-height: 40px;
   padding: 0 14px;
 }
 
-.hint,
-.status {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+.hint {
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
   margin: 0;
 }
 </style>

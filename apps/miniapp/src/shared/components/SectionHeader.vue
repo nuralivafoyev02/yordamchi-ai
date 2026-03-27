@@ -26,15 +26,17 @@ defineProps<{
 }
 
 h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-title);
   margin: 0;
 }
 
 p {
   color: var(--text-muted);
   font-size: var(--text-sm);
-  margin: 0 0 8px;
+  font-weight: var(--weight-interactive);
+  letter-spacing: 0.08em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
 }
 </style>

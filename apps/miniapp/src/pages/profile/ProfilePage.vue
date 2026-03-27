@@ -4,6 +4,7 @@ import type { AppLocale, CategorySnapshot, NotificationSettingsSnapshot, ThemeKe
 import BaseButton from '../../shared/components/BaseButton.vue';
 import BaseCard from '../../shared/components/BaseCard.vue';
 import BaseModal from '../../shared/components/BaseModal.vue';
+import { useToast } from '../../composables/useToast';
 import { useText } from '../../shared/composables/useText';
 import { useSessionStore } from '../../app/stores/session';
 import { useUiStore } from '../../app/stores/ui';
@@ -34,6 +35,7 @@ type NotificationSettingKey =
 const sessionStore = useSessionStore();
 const uiStore = useUiStore();
 const { text } = useText();
+const toast = useToast();
 
 const activeSheet = ref<ProfileSheet | null>(null);
 const categories = ref<CategorySnapshot[]>([]);
@@ -247,6 +249,10 @@ async function loadNotificationSettings() {
     notificationSettings.value = response.settings;
   } catch (error) {
     sheetError.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: sheetError.value,
+      variant: 'error',
+    });
   } finally {
     sheetBusy.value = false;
   }
@@ -260,6 +266,10 @@ async function loadCategories() {
     categories.value = response.categories ?? [];
   } catch (error) {
     sheetError.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: sheetError.value,
+      variant: 'error',
+    });
   } finally {
     sheetBusy.value = false;
   }
@@ -280,9 +290,17 @@ async function saveProfileDetails() {
       displayName: editForm.displayName.trim() || (profile.value?.displayName ?? ''),
       timezone: editForm.timezone.trim() || (profile.value?.timezone ?? 'Asia/Tashkent'),
     });
+    toast.show({
+      message: text('common.saved'),
+      variant: 'success',
+    });
     activeSheet.value = null;
   } catch (error) {
     sheetError.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: sheetError.value,
+      variant: 'error',
+    });
   } finally {
     sheetBusy.value = false;
   }
@@ -300,6 +318,10 @@ async function updateTheme(theme: ThemeKey) {
     sessionStore.setProfilePatch({ themePreference: theme });
   } catch {
     uiStore.applyTheme(profile.value?.themePreference ?? 'blue');
+    toast.show({
+      message: text('errors.generic'),
+      variant: 'error',
+    });
   }
 }
 
@@ -310,6 +332,10 @@ async function updateLocale(locale: AppLocale) {
     sessionStore.setProfilePatch({ locale });
   } catch {
     uiStore.setLocale(profile.value?.locale ?? 'uz');
+    toast.show({
+      message: text('errors.generic'),
+      variant: 'error',
+    });
   }
 }
 
@@ -336,6 +362,10 @@ async function toggleNotification(id: string) {
   } catch (error) {
     notificationSettings.value = previous;
     sheetError.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: sheetError.value,
+      variant: 'error',
+    });
   }
 }
 
@@ -358,6 +388,10 @@ function downloadExport() {
   link.download = `yordamchi-export-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
+  toast.show({
+    message: text('common.exportStarted'),
+    variant: 'info',
+  });
 }
 
 function savePin() {
@@ -371,6 +405,10 @@ function savePin() {
   window.localStorage.setItem('yordamchi-local-pin', normalized);
   hasLocalPin.value = true;
   pinCode.value = '';
+  toast.show({
+    message: text('common.saved'),
+    variant: 'success',
+  });
   activeSheet.value = null;
 }
 
@@ -378,6 +416,10 @@ function clearPin() {
   window.localStorage.removeItem('yordamchi-local-pin');
   hasLocalPin.value = false;
   pinCode.value = '';
+  toast.show({
+    message: text('common.saved'),
+    variant: 'success',
+  });
   activeSheet.value = null;
 }
 
@@ -596,7 +638,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
       <div v-if="sheetBusy" class="sheet-note">{{ text('common.loading') }}</div>
       <template v-else>
         <div v-if="groupedCategories.expense.length" class="category-block">
-          <p>Expense</p>
+          <p>{{ text('finance.expense') }}</p>
           <div class="category-chips">
             <span v-for="category in groupedCategories.expense" :key="category.id" class="category-chip">
               {{ category.icon || '•' }} {{ resolveCategoryName(category) }}
@@ -605,7 +647,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
         </div>
 
         <div v-if="groupedCategories.income.length" class="category-block">
-          <p>Income</p>
+          <p>{{ text('finance.income') }}</p>
           <div class="category-chips">
             <span v-for="category in groupedCategories.income" :key="category.id" class="category-chip">
               {{ category.icon || '•' }} {{ resolveCategoryName(category) }}
@@ -614,7 +656,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
         </div>
 
         <div v-if="groupedCategories.general.length" class="category-block">
-          <p>General</p>
+          <p>{{ text('categories.general') }}</p>
           <div class="category-chips">
             <span v-for="category in groupedCategories.general" :key="category.id" class="category-chip">
               {{ category.icon || '•' }} {{ resolveCategoryName(category) }}
@@ -671,7 +713,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 <style scoped>
 .page {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .group-card {
@@ -682,12 +724,12 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 .group-row {
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--divider);
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  min-height: 72px;
-  padding: 14px 16px;
+  min-height: 58px;
+  padding: 10px 12px;
 }
 
 .group-row:first-child {
@@ -714,67 +756,67 @@ function handleRowAction(key: ProfileSheet | 'support') {
 .group-row__icon {
   align-items: center;
   display: inline-flex;
-  font-size: 22px;
+  font-size: 18px;
   justify-content: center;
-  width: 30px;
+  width: 24px;
 }
 
 .group-row__lead strong {
   display: block;
-  font-family: var(--font-display);
-  font-size: 16px;
-  line-height: 1.15;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  line-height: 1.2;
   margin-bottom: 2px;
 }
 
 .group-row__lead small {
-  color: var(--text-muted);
+  color: var(--tg-hint);
   display: block;
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 1.35;
 }
 
 .group-row__chevron {
-  color: #9aa4b5;
-  font-size: 22px;
+  color: var(--tg-hint);
+  font-size: 18px;
   line-height: 1;
 }
 
 .group-row__pill {
-  background: rgba(70, 58, 31, 0.42);
-  border: 1px solid rgba(240, 193, 82, 0.28);
-  border-radius: 14px;
-  color: #f3d990;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 10px;
+  color: var(--accent-strong);
   cursor: pointer;
   display: inline-flex;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
   justify-content: center;
   line-height: 1.2;
   max-width: 170px;
-  min-height: 36px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 10px;
   text-align: center;
   white-space: normal;
 }
 
 .locale-card {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--divider);
   display: grid;
-  gap: 12px;
-  padding: 14px 16px 16px;
+  gap: 10px;
+  padding: 10px 12px 12px;
 }
 
 .locale-card__head strong {
   display: block;
-  font-family: var(--font-display);
-  font-size: 16px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
   margin-bottom: 2px;
 }
 
 .locale-card__head small {
-  color: var(--text-muted);
-  font-size: 12px;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .locale-card__grid {
@@ -790,12 +832,13 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 .sheet-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .sheet-field span {
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
 }
 
 .sheet-field input,
@@ -803,7 +846,8 @@ function handleRowAction(key: ProfileSheet | 'support') {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  min-height: 46px;
+  color: var(--tg-text);
+  min-height: 40px;
   padding: 0 14px;
 }
 
@@ -813,26 +857,27 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .sheet-copy strong {
-  font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
 }
 
 .sheet-copy small,
 .sheet-note {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-body);
   line-height: 1.5;
   margin: 0;
 }
 
 .sheet-error {
   color: var(--danger);
-  font-size: 13px;
+  font-size: var(--text-xs);
   margin: 0;
 }
 
 .usage-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .usage-item {
@@ -842,27 +887,28 @@ function handleRowAction(key: ProfileSheet | 'support') {
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 .usage-item span {
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .usage-item strong {
-  font-size: 14px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .category-block {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .category-block p {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  font-weight: var(--weight-interactive);
   letter-spacing: 0.08em;
   margin: 0;
   text-transform: uppercase;
@@ -878,19 +924,20 @@ function handleRowAction(key: ProfileSheet | 'support') {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 999px;
-  font-size: 13px;
-  padding: 8px 12px;
+  font-size: var(--text-body);
+  padding: 6px 10px;
 }
 
 .sheet-bullets {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
   padding-left: 18px;
 }
 
 .sheet-bullets li {
   color: var(--text);
-  line-height: 1.5;
+  font-size: var(--text-body);
+  line-height: 1.45;
 }
 </style>

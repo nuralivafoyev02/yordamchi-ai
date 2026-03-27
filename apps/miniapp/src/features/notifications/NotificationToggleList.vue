@@ -28,7 +28,7 @@ const emit = defineEmits<{
 <style scoped>
 .list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 article {
@@ -38,27 +38,29 @@ article {
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 strong {
   display: block;
-  margin-bottom: 4px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  margin-bottom: 2px;
 }
 
 span {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .toggle {
-  background: var(--accent);
+  background: var(--tg-button);
   border: none;
   border-radius: 999px;
   cursor: pointer;
-  height: 28px;
+  height: 22px;
   position: relative;
-  width: 50px;
+  width: 38px;
 }
 
 .toggle--off {
@@ -66,18 +68,18 @@ span {
 }
 
 .toggle::after {
-  background: #fff;
+  background: var(--tg-button-text);
   border-radius: 999px;
   content: "";
-  height: 20px;
+  height: 16px;
   position: absolute;
-  right: 4px;
-  top: 4px;
+  right: 3px;
+  top: 3px;
   transition: transform 140ms ease;
-  width: 20px;
+  width: 16px;
 }
 
 .toggle--off::after {
-  transform: translateX(-22px);
+  transform: translateX(-16px);
 }
 </style>

@@ -23,20 +23,19 @@ const { text } = useText();
 .upsell {
   border-color: rgba(var(--accent-rgb), 0.22);
   display: grid;
-  gap: 8px;
-  padding: 16px;
+  gap: 6px;
 }
 
 p,
 span {
-  color: var(--text-muted);
-  font-size: 13px;
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
   margin: 0;
 }
 
 h3 {
-  font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 

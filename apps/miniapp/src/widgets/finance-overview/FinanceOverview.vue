@@ -194,60 +194,63 @@ function accountTone(index: number) {
 <style scoped>
 .overview {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .hero-card {
   display: grid;
-  gap: 20px;
+  gap: 14px;
 }
 
 .hero-card__head {
   align-items: start;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: space-between;
 }
 
 .hero-card__head p,
 .account-card__header p {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  margin: 0 0 8px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .hero-card__head h2 {
-  font-family: var(--font-display);
-  font-size: clamp(36px, 9vw, 48px);
-  line-height: 1.02;
+  font-size: clamp(24px, 7vw, 30px);
+  font-weight: var(--weight-title);
+  line-height: 1.05;
   margin: 0;
 }
 
 .net-pill {
   align-content: center;
   align-self: stretch;
-  background: rgba(54, 209, 106, 0.12);
-  border: 1px solid rgba(54, 209, 106, 0.2);
+  background: var(--success-soft);
+  border: 1px solid color-mix(in srgb, var(--success) 22%, transparent);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 6px;
-  min-width: 148px;
-  padding: 14px 16px;
+  gap: 4px;
+  min-width: 118px;
+  padding: 10px 12px;
 }
 
 .net-pill small {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .net-pill strong {
   color: var(--success);
-  font-size: var(--text-lg);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .net-pill--negative {
-  background: rgba(255, 177, 26, 0.12);
-  border-color: rgba(255, 177, 26, 0.22);
+  background: var(--warning-soft);
+  border-color: color-mix(in srgb, var(--warning) 22%, transparent);
 }
 
 .net-pill--negative strong {
@@ -256,7 +259,7 @@ function accountTone(index: number) {
 
 .metric-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -265,33 +268,36 @@ function accountTone(index: number) {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
 }
 
 .metric-card span {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .metric-card strong {
-  font-size: var(--text-md);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .quick-action-bar {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .quick-action-bar__title span {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .quick-action-bar__grid {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .quick-action {
@@ -302,10 +308,11 @@ function accountTone(index: number) {
   color: var(--text);
   cursor: pointer;
   display: grid;
-  gap: 10px;
-  justify-items: center;
-  min-height: 92px;
-  padding: 14px 10px;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-items: start;
+  min-height: 40px;
+  padding: 8px 10px;
   transition: transform 160ms ease, border-color 160ms ease;
 }
 
@@ -320,25 +327,26 @@ function accountTone(index: number) {
   border-radius: 999px;
   color: var(--accent-strong);
   display: inline-flex;
-  font-size: 22px;
-  height: 44px;
+  font-size: 14px;
+  height: 24px;
   justify-content: center;
-  width: 44px;
+  width: 24px;
 }
 
 .quick-action strong {
-  font-size: var(--text-sm);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .flow-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .flow-card {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .flow-card__head {
@@ -348,8 +356,8 @@ function accountTone(index: number) {
 }
 
 .flow-card h3 {
-  font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-title);
   margin: 0;
 }
 
@@ -368,15 +376,15 @@ function accountTone(index: number) {
 }
 
 .flow-card__meta {
-  color: var(--text-muted);
+  color: var(--tg-hint);
   display: grid;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 
 .account-card {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .account-card__header {
@@ -386,60 +394,67 @@ function accountTone(index: number) {
 }
 
 .account-card__header h3 {
-  font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
 .account-list {
   display: grid;
-  gap: 10px;
+  gap: 0;
 }
 
 .account-row {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--divider);
   color: var(--text);
   cursor: pointer;
   display: grid;
-  gap: 14px;
+  gap: 10px;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 14px;
+  min-height: 54px;
+  padding: 10px 0;
   text-align: left;
+}
+
+.account-row:first-child {
+  border-top: none;
 }
 
 .account-row__icon {
   align-items: center;
   border-radius: 999px;
-  color: #fff;
+  color: var(--tg-button-text);
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
-  height: 38px;
+  height: 36px;
   justify-content: center;
-  width: 38px;
+  width: 36px;
 }
 
 .account-row__copy {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .account-row__copy strong,
 .account-row__meta strong {
-  font-size: var(--text-md);
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
 }
 
 .account-row__copy small,
 .account-row__meta small,
 .account-card__empty {
-  color: var(--text-muted);
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
 }
 
 .account-row__progress {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-soft);
   border-radius: 999px;
   height: 5px;
   overflow: hidden;
@@ -453,7 +468,7 @@ function accountTone(index: number) {
 
 .account-row__meta {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   justify-items: end;
 }
 
@@ -469,11 +484,6 @@ function accountTone(index: number) {
   .net-pill {
     min-width: 0;
     width: 100%;
-  }
-
-  .metric-grid,
-  .quick-action-bar__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

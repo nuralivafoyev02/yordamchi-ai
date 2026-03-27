@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import type { CurrencyCode, DashboardAccount, DebtDirection } from '@yordamchi/shared';
 import BaseButton from '../../shared/components/BaseButton.vue';
-import BaseCard from '../../shared/components/BaseCard.vue';
+import { useToast } from '../../composables/useToast';
 import { apiClient } from '../../shared/api/client';
 import { useSessionStore } from '../../app/stores/session';
 import { useText } from '../../shared/composables/useText';
@@ -20,9 +20,12 @@ const emit = defineEmits<{
 
 const sessionStore = useSessionStore();
 const { text } = useText();
+const toast = useToast();
 
 const errorMessage = ref<string | null>(null);
 const saving = ref(false);
+const amountInput = ref<HTMLInputElement | null>(null);
+const titleInput = ref<HTMLInputElement | null>(null);
 
 const form = reactive({
   accountId: '',
@@ -86,9 +89,13 @@ function resetForm() {
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (open) {
       resetForm();
+      await nextTick();
+      const target = isPlan.value ? titleInput.value : amountInput.value;
+      target?.focus();
+      target?.select();
     }
   },
   { immediate: true },
@@ -169,10 +176,22 @@ async function submit() {
     }
 
     await sessionStore.refreshBootstrap();
+    toast.show({
+      message: props.mode === 'plan'
+        ? text('bot.planCreated')
+        : props.mode === 'debt'
+          ? text('bot.debtCreated')
+          : text('bot.transactionCreated'),
+      variant: 'success',
+    });
     emit('saved');
     emit('close');
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : text('errors.generic');
+    toast.show({
+      message: errorMessage.value,
+      variant: 'error',
+    });
   } finally {
     saving.value = false;
   }
@@ -180,126 +199,147 @@ async function submit() {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
-    <BaseCard class="modal">
-      <div class="modal__header">
-        <div>
-          <p>{{ text('finance.quickActions') }}</p>
-          <h3>{{ title }}</h3>
-        </div>
-        <button class="modal__close" type="button" @click="emit('close')">×</button>
+  <Teleport to="body">
+    <Transition name="entry-sheet">
+      <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
+        <section class="modal">
+          <div class="modal__handle" />
+
+          <div class="modal__header">
+            <div>
+              <p>{{ text('finance.quickActions') }}</p>
+              <h3>{{ title }}</h3>
+            </div>
+            <button class="modal__close" type="button" @click="emit('close')">×</button>
+          </div>
+
+          <div v-if="isTransaction || isDebt" class="amount-block">
+            <span class="amount-block__currency">{{ selectedAccount?.currency ?? form.currency ?? baseCurrency }}</span>
+            <input
+              ref="amountInput"
+              v-model="form.amount"
+              class="amount-block__input"
+              inputmode="decimal"
+              :placeholder="text('finance.amountLabel')"
+            />
+          </div>
+
+          <label v-if="isPlan || isDebt" class="sheet-field">
+            <span>{{ titleLabel }}</span>
+            <input ref="titleInput" v-model="form.title" />
+          </label>
+
+          <div v-if="isTransaction && accounts.length" class="sheet-group">
+            <span class="sheet-group__label">{{ text('finance.selectAccount') }}</span>
+            <div class="chip-row">
+              <button
+                v-for="account in accounts"
+                :key="account.id"
+                :class="['choice-chip', { 'choice-chip--active': form.accountId === account.id }]"
+                type="button"
+                @click="form.accountId = account.id"
+              >
+                <strong>{{ account.name }}</strong>
+                <small>{{ account.currency }}</small>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="isDebt" class="sheet-group">
+            <span class="sheet-group__label">{{ text('common.account') }}</span>
+            <div class="chip-row chip-row--compact">
+              <button
+                :class="['choice-chip', 'choice-chip--compact', { 'choice-chip--active': form.currency === 'UZS' }]"
+                type="button"
+                @click="form.currency = 'UZS'"
+              >
+                UZS
+              </button>
+              <button
+                :class="['choice-chip', 'choice-chip--compact', { 'choice-chip--active': form.currency === 'USD' }]"
+                type="button"
+                @click="form.currency = 'USD'"
+              >
+                USD
+              </button>
+            </div>
+          </div>
+
+          <div v-if="isDebt" class="sheet-group">
+            <span class="sheet-group__label">{{ text('finance.actionDebt') }}</span>
+            <div class="chip-row chip-row--compact">
+              <button
+                v-for="item in debtDirectionOptions"
+                :key="item.value"
+                :class="['choice-chip', 'choice-chip--compact', { 'choice-chip--active': form.debtDirection === item.value }]"
+                type="button"
+                @click="form.debtDirection = item.value"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="sheet-grid">
+            <label class="sheet-field">
+              <span>{{ text('finance.entryDate') }}</span>
+              <input v-model="form.entryDate" type="date" />
+            </label>
+
+            <label v-if="isDebt" class="sheet-field">
+              <span>{{ text('finance.dueDateLabel') }}</span>
+              <input v-model="form.dueDate" type="date" />
+            </label>
+          </div>
+
+          <label class="sheet-field">
+            <span>{{ noteLabel }}</span>
+            <input v-model="form.note" :placeholder="noteLabel" />
+          </label>
+
+          <p v-if="errorMessage" class="modal__error">{{ errorMessage }}</p>
+
+          <div class="modal__actions">
+            <BaseButton block variant="ghost" @click="emit('close')">{{ text('common.cancel') }}</BaseButton>
+            <BaseButton block @click="submit">{{ saving ? text('common.loading') : text('finance.saveEntry') }}</BaseButton>
+          </div>
+        </section>
       </div>
-
-      <label v-if="isPlan || isDebt" class="sheet-field">
-        <span>{{ titleLabel }}</span>
-        <input v-model="form.title" />
-      </label>
-
-      <div v-if="isTransaction" class="sheet-grid">
-        <label class="sheet-field">
-          <span>{{ text('finance.selectAccount') }}</span>
-          <select v-model="form.accountId">
-            <option v-for="account in accounts" :key="account.id" :value="account.id">
-              {{ account.name }} · {{ account.currency }}
-            </option>
-          </select>
-        </label>
-
-        <label class="sheet-field">
-          <span>{{ text('finance.entryDate') }}</span>
-          <input v-model="form.entryDate" type="date" />
-        </label>
-      </div>
-
-      <div v-if="isDebt" class="sheet-grid">
-        <label class="sheet-field">
-          <span>{{ text('finance.entryDate') }}</span>
-          <input v-model="form.entryDate" type="date" />
-        </label>
-
-        <label class="sheet-field">
-          <span>{{ text('finance.dueDateLabel') }}</span>
-          <input v-model="form.dueDate" type="date" />
-        </label>
-      </div>
-
-      <div v-if="isDebt" class="direction-list">
-        <button
-          v-for="item in debtDirectionOptions"
-          :key="item.value"
-          :class="['direction-chip', { 'direction-chip--active': form.debtDirection === item.value }]"
-          type="button"
-          @click="form.debtDirection = item.value"
-        >
-          {{ item.label }}
-        </button>
-      </div>
-
-      <div v-if="isDebt" class="sheet-grid">
-        <label class="sheet-field">
-          <span>{{ text('finance.amountLabel') }} ({{ form.currency }})</span>
-          <input v-model="form.amount" inputmode="decimal" />
-        </label>
-
-        <label class="sheet-field">
-          <span>{{ text('common.account') }}</span>
-          <select v-model="form.currency">
-            <option value="UZS">UZS</option>
-            <option value="USD">USD</option>
-          </select>
-        </label>
-      </div>
-
-      <div v-if="isTransaction" class="sheet-grid">
-        <label class="sheet-field">
-          <span>{{ text('finance.amountLabel') }} ({{ selectedAccount?.currency ?? baseCurrency }})</span>
-          <input v-model="form.amount" inputmode="decimal" />
-        </label>
-
-        <div class="account-pill" v-if="selectedAccount">
-          <small>{{ text('common.account') }}</small>
-          <strong>{{ selectedAccount.name }}</strong>
-        </div>
-      </div>
-
-      <label v-if="isPlan" class="sheet-field">
-        <span>{{ text('finance.entryDate') }}</span>
-        <input v-model="form.entryDate" type="date" />
-      </label>
-
-      <label class="sheet-field">
-        <span>{{ noteLabel }}</span>
-        <input v-model="form.note" />
-      </label>
-
-      <p v-if="errorMessage" class="modal__error">{{ errorMessage }}</p>
-
-      <div class="modal__actions">
-        <BaseButton block variant="ghost" @click="emit('close')">{{ text('common.cancel') }}</BaseButton>
-        <BaseButton block @click="submit">{{ saving ? text('common.loading') : text('finance.saveEntry') }}</BaseButton>
-      </div>
-    </BaseCard>
-  </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
 .modal-backdrop {
   align-items: end;
-  background: rgba(7, 7, 9, 0.76);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--tg-text) 34%, transparent);
   display: flex;
   inset: 0;
   justify-content: center;
-  padding: 16px;
+  padding: 16px 12px 0;
   position: fixed;
-  z-index: 40;
+  z-index: var(--modal-backdrop-z);
 }
 
 .modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   max-width: 560px;
+  padding: 10px 14px calc(var(--safe-bottom) + 16px);
   width: 100%;
+  z-index: var(--modal-sheet-z);
+}
+
+.modal__handle {
+  background: color-mix(in srgb, var(--tg-hint) 40%, transparent);
+  border-radius: 999px;
+  height: 4px;
+  justify-self: center;
+  width: 40px;
 }
 
 .modal__header {
@@ -309,13 +349,16 @@ async function submit() {
 }
 
 .modal__header p {
-  color: var(--text-muted);
-  margin: 0 0 6px;
+  color: var(--tg-hint);
+  font-size: var(--text-section);
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
 }
 
 .modal__header h3 {
-  font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-interactive);
   margin: 0;
 }
 
@@ -323,11 +366,68 @@ async function submit() {
   background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text);
+  color: var(--tg-text);
   cursor: pointer;
-  font-size: 24px;
-  height: 42px;
-  width: 42px;
+  font-size: 22px;
+  height: 32px;
+  width: 32px;
+}
+
+.amount-block {
+  background: var(--tg-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 14px 16px;
+}
+
+.amount-block__currency {
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
+  letter-spacing: 0.08em;
+}
+
+.amount-block__input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--tg-hint) 32%, transparent);
+  border-radius: 0;
+  color: var(--tg-text);
+  font-size: 28px;
+  font-weight: var(--weight-semibold);
+  padding: 0 0 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.sheet-group {
+  display: grid;
+  gap: 8px;
+}
+
+.sheet-group__label {
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
+}
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-row--compact {
+  flex-wrap: wrap;
 }
 
 .sheet-grid {
@@ -338,22 +438,22 @@ async function submit() {
 
 .sheet-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
-.sheet-field span,
-.account-pill small {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
+.sheet-field span {
+  color: var(--tg-hint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
 }
 
 .sheet-field input,
 .sheet-field select {
-  background: var(--surface-soft);
+  background: var(--tg-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text);
-  min-height: 52px;
+  color: var(--tg-text);
+  min-height: 40px;
   padding: 0 14px;
 }
 
@@ -361,42 +461,44 @@ async function submit() {
   appearance: none;
 }
 
-.direction-list {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.direction-chip {
-  background: var(--surface-soft);
+.choice-chip {
+  align-items: center;
+  background: var(--tg-secondary-bg);
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text-muted);
+  color: var(--tg-text);
   cursor: pointer;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-height: 46px;
-}
-
-.direction-chip--active {
-  background: rgba(var(--accent-rgb), 0.18);
-  border-color: rgba(var(--accent-rgb), 0.36);
-  color: var(--accent-strong);
-}
-
-.account-pill {
-  align-content: center;
-  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.12), rgba(var(--accent-rgb), 0.04));
-  border: 1px solid rgba(var(--accent-rgb), 0.22);
-  border-radius: var(--radius-sm);
-  display: grid;
+  display: inline-flex;
   gap: 6px;
-  min-height: 52px;
-  padding: 12px 14px;
+  min-height: 32px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
-.account-pill strong {
-  font-size: var(--text-md);
+.choice-chip strong,
+.choice-chip small {
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+}
+
+.choice-chip small {
+  color: var(--tg-hint);
+}
+
+.choice-chip--compact {
+  justify-content: center;
+}
+
+.choice-chip--active {
+  background: color-mix(in srgb, var(--tg-button) 14%, transparent);
+  border-color: color-mix(in srgb, var(--tg-button) 32%, transparent);
+  color: var(--tg-button);
+}
+
+.modal__error {
+  color: var(--danger);
+  font-size: var(--text-body);
+  margin: 0;
 }
 
 .modal__actions {
@@ -405,10 +507,28 @@ async function submit() {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.modal__error {
-  color: var(--danger);
-  font-size: var(--text-sm);
-  margin: 0;
+.modal__actions :deep(.button) {
+  min-height: 44px;
+}
+
+.entry-sheet-enter-active,
+.entry-sheet-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.entry-sheet-enter-active .modal,
+.entry-sheet-leave-active .modal {
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.entry-sheet-enter-from,
+.entry-sheet-leave-to {
+  opacity: 0;
+}
+
+.entry-sheet-enter-from .modal,
+.entry-sheet-leave-to .modal {
+  transform: translateY(32px);
 }
 
 @media (max-width: 560px) {

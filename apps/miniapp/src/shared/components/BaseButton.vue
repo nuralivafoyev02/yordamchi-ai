@@ -15,16 +15,17 @@ defineProps<{
 .button {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: inline-flex;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  gap: 8px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-interactive);
+  gap: 6px;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 18px;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  max-height: var(--button-height);
+  min-height: var(--button-height);
+  padding: 0 14px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 80ms ease;
 }
 
 .button:hover {
@@ -36,20 +37,19 @@ defineProps<{
 }
 
 .button--primary {
-  background: var(--accent);
-  box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.26);
-  color: var(--accent-contrast);
+  background: var(--tg-button);
+  color: var(--tg-button-text);
 }
 
 .button--secondary {
   background: var(--surface-strong);
-  border-color: var(--border);
+  border-color: var(--border-strong);
   color: var(--text);
 }
 
 .button--ghost {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   color: var(--text);
 }
 </style>

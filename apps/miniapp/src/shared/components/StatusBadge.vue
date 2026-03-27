@@ -12,37 +12,38 @@ defineProps<{
 
 <style scoped>
 .badge {
-  border-radius: 999px;
+  border-radius: 6px;
   display: inline-flex;
   font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 6px 10px;
+  font-weight: var(--weight-interactive);
+  letter-spacing: 0.03em;
+  min-height: 18px;
+  padding: 2px 8px;
   text-transform: uppercase;
 }
 
 .badge--info {
-  background: rgba(var(--accent-rgb), 0.16);
+  background: var(--info-soft);
   color: var(--accent-strong);
 }
 
 .badge--success {
-  background: rgba(54, 209, 106, 0.14);
+  background: var(--success-soft);
   color: var(--success);
 }
 
 .badge--warning {
-  background: rgba(255, 177, 26, 0.14);
+  background: var(--warning-soft);
   color: var(--warning);
 }
 
 .badge--danger {
-  background: rgba(255, 107, 92, 0.14);
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
 .badge--premium {
-  background: rgba(240, 193, 82, 0.16);
+  background: var(--accent-soft);
   color: var(--accent-strong);
 }
 </style>
