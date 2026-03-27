@@ -1,22 +1,29 @@
+<script setup lang="ts">
+defineProps<{
+  items: Array<{
+    description: string;
+    enabled: boolean;
+    id: string;
+    label: string;
+  }>;
+}>();
+
+const emit = defineEmits<{
+  toggle: [id: string];
+}>();
+</script>
+
 <template>
   <div class="list">
-    <article v-for="item in items" :key="item.label">
+    <article v-for="item in items" :key="item.id">
       <div>
         <strong>{{ item.label }}</strong>
         <span>{{ item.description }}</span>
       </div>
-      <div class="toggle" />
+      <button :class="['toggle', { 'toggle--off': !item.enabled }]" type="button" @click="emit('toggle', item.id)" />
     </article>
   </div>
 </template>
-
-<script setup lang="ts">
-const items = [
-  { label: 'Plan reminders', description: 'Bot alerts before plan deadlines' },
-  { label: 'Debt reminders', description: 'Notify on debt due dates' },
-  { label: 'Limit alerts', description: 'Warn when spending approaches limits' },
-];
-</script>
 
 <style scoped>
 .list {
@@ -26,7 +33,7 @@ const items = [
 
 article {
   align-items: center;
-  background: var(--surface);
+  background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: flex;
@@ -45,11 +52,17 @@ span {
 }
 
 .toggle {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: var(--accent);
+  border: none;
   border-radius: 999px;
+  cursor: pointer;
   height: 28px;
   position: relative;
   width: 50px;
+}
+
+.toggle--off {
+  background: var(--surface-strong);
 }
 
 .toggle::after {
@@ -60,6 +73,11 @@ span {
   position: absolute;
   right: 4px;
   top: 4px;
+  transition: transform 140ms ease;
   width: 20px;
+}
+
+.toggle--off::after {
+  transform: translateX(-22px);
 }
 </style>

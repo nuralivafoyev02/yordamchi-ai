@@ -103,6 +103,16 @@ export const updateProfileSchema = z.object({
   baseCurrency: currencyCodeSchema.optional(),
 });
 
+export const updateNotificationSettingsSchema = z.object({
+  botNotificationsEnabled: z.boolean().optional(),
+  debtRemindersEnabled: z.boolean().optional(),
+  limitRemindersEnabled: z.boolean().optional(),
+  planRemindersEnabled: z.boolean().optional(),
+  quietHoursFrom: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  quietHoursTo: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
+  subscriptionRemindersEnabled: z.boolean().optional(),
+});
+
 export const adminGrantPremiumSchema = z.object({
   targetTelegramUserId: z.number().int().positive().optional(),
   targetUserId: z.string().uuid().optional(),

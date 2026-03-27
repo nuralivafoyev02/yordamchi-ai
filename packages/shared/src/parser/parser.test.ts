@@ -53,6 +53,26 @@ describe('parser command flow', () => {
     expect(parsed.transaction?.amount).toBe(50);
   });
 
+  it('classifies russian expense and income phrases', () => {
+    const expense = parseCommand('Завтра расход 200 тысяч', {
+      locale: 'ru',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+    const income = parseCommand('Зарплата 500 долларов', {
+      locale: 'ru',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(expense.intent).toBe('create_expense');
+    expect(expense.transaction?.amount).toBe(200_000);
+    expect(expense.transaction?.currency).toBe('UZS');
+    expect(income.intent).toBe('create_income');
+    expect(income.transaction?.amount).toBe(500);
+    expect(income.transaction?.currency).toBe('USD');
+  });
+
   it('classifies debt and extracts counterparty', () => {
     const parsed = parseCommand('Ali 100 dollar qarz berdi', {
       locale: 'uz',

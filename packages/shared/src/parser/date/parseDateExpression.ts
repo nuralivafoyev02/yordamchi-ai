@@ -81,16 +81,28 @@ interface TimeHint {
   minute: number;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasPhrase(text: string, phrase: string): boolean {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(phrase)}(?=$|[^\\p{L}\\p{N}])`, 'u').test(text);
+}
+
+function findPhrase(text: string, phrases: string[]): string | null {
+  return phrases.find((phrase) => hasPhrase(text, phrase)) ?? null;
+}
+
 function parseTimeHint(text: string): TimeHint | null {
   const explicit = text.match(
     /\b(?:soat\s*(?<hour1>\d{1,2})(?::(?<minute1>\d{2}))?|(?<hour2>\d{1,2}):(?<minute2>\d{2})|(?<hour3>\d{1,2})\s*da|(?<hour4>\d{1,2})\s*(?<ampm>am|pm))\b/u,
   );
   const period =
-    /\b(kechqurun|вечером|evening)\b/u.test(text)
+    findPhrase(text, ['kechqurun', 'вечером', 'evening'])
       ? 'evening'
-      : /\b(ertalab|утром|morning)\b/u.test(text)
+      : findPhrase(text, ['ertalab', 'утром', 'morning'])
         ? 'morning'
-        : /\b(tushdan keyin|днем|afternoon)\b/u.test(text)
+        : findPhrase(text, ['tushdan keyin', 'днем', 'afternoon'])
           ? 'afternoon'
           : null;
 
@@ -125,7 +137,7 @@ function parseTimeHint(text: string): TimeHint | null {
     return {
       allDay: false,
       hour,
-      matchedText: explicit[0],
+      matchedText: explicit?.[0] ?? rawHour,
       minute,
     };
   }
@@ -148,24 +160,24 @@ function parseTimeHint(text: string): TimeHint | null {
 function resolveRelativeDate(text: string, now: Date, timeZone: string) {
   const parts = getZonedParts(now, timeZone);
 
-  const todayMatch = text.match(/\b(today|bugun|сегодня)\b/u);
+  const todayMatch = findPhrase(text, ['today', 'bugun', 'сегодня']);
   if (todayMatch) {
-    return { matchedText: todayMatch[0], ...parts };
+    return { matchedText: todayMatch, ...parts };
   }
 
-  const tomorrowMatch = text.match(/\b(tomorrow|ertaga|завтра)\b/u);
+  const tomorrowMatch = findPhrase(text, ['tomorrow', 'ertaga', 'завтра']);
   if (tomorrowMatch) {
-    return { matchedText: tomorrowMatch[0], ...addCalendarDays(parts.year, parts.month, parts.day, 1) };
+    return { matchedText: tomorrowMatch, ...addCalendarDays(parts.year, parts.month, parts.day, 1) };
   }
 
-  const afterTomorrowMatch = text.match(/\b(day after tomorrow|indin|послезавтра)\b/u);
+  const afterTomorrowMatch = findPhrase(text, ['day after tomorrow', 'indin', 'послезавтра']);
   if (afterTomorrowMatch) {
-    return { matchedText: afterTomorrowMatch[0], ...addCalendarDays(parts.year, parts.month, parts.day, 2) };
+    return { matchedText: afterTomorrowMatch, ...addCalendarDays(parts.year, parts.month, parts.day, 2) };
   }
 
-  const endOfMonthMatch = text.match(/\b(oy oxirida|oy oxiri|end of month|конец месяца)\b/u);
+  const endOfMonthMatch = findPhrase(text, ['oy oxirida', 'oy oxiri', 'end of month', 'конец месяца']);
   if (endOfMonthMatch) {
-    return { matchedText: endOfMonthMatch[0], ...endOfMonthParts(parts.year, parts.month) };
+    return { matchedText: endOfMonthMatch, ...endOfMonthParts(parts.year, parts.month) };
   }
 
   return null;
@@ -201,14 +213,18 @@ function resolveExplicitDate(text: string, now: Date, timeZone: string) {
 
 function resolveWeekday(text: string, now: Date, timeZone: string) {
   const parts = getZonedParts(now, timeZone);
-  const nextWeek = /\b(next week|keyingi hafta|следующ)\b/u.test(text);
-  const matchedKey = Object.keys(WEEKDAY_MAP).find((weekday) => text.includes(weekday));
+  const nextWeek = findPhrase(text, ['next week', 'keyingi hafta']) !== null || text.includes('следующ');
+  const matchedKey = Object.keys(WEEKDAY_MAP).find((weekday) => hasPhrase(text, weekday));
 
   if (!matchedKey) {
     return null;
   }
 
   const targetWeekday = WEEKDAY_MAP[matchedKey];
+  if (targetWeekday === undefined) {
+    return null;
+  }
+
   const currentWeekday = getWeekdayIndex(parts.year, parts.month, parts.day);
   let delta = (targetWeekday - currentWeekday + 7) % 7;
 
@@ -261,7 +277,7 @@ export function parseDateExpression(input: string, _locale: AppLocale, timeZone:
     allDay = false;
     hour = timeHint.hour;
     minute = timeHint.minute;
-    matchedText = [matchedText, timeHint.matchedText].filter(Boolean).join(' ');
+    matchedText = [matchedText, timeHint.matchedText].filter((value): value is string => Boolean(value)).join(' ');
 
     if (!dateSource) {
       const currentMinutes = parts.hour * 60 + parts.minute;

@@ -4,8 +4,8 @@ import { normalizeText } from '../normalizers/normalizeText';
 
 const KEYWORDS: Record<Exclude<IntentName, 'unknown'>, string[]> = {
   create_debt: ['qarz', 'debt', 'долг', 'lent', 'borrowed'],
-  create_expense: ['chiqim', 'expense', 'расход', 'pay', 'paid', 'xarajat', 'spent', 'soliq'],
-  create_income: ['kirim', 'income', 'доход', 'salary', 'maosh', 'oylik', 'received', 'oldim'],
+  create_expense: ['chiqim', 'expense', 'расход', 'расходы', 'pay', 'paid', 'xarajat', 'spent', 'soliq', 'потратил'],
+  create_income: ['kirim', 'income', 'доход', 'salary', 'maosh', 'oylik', 'received', 'oldim', 'зарплата', 'зарплату', 'получил'],
   create_plan: ['reja', 'plan', 'meeting', 'uchrashuv', 'task', 'todo', 'напомни', 'eslat'],
   help: ['help', 'yordam', 'pomosh', 'помощь', '/start'],
   open_miniapp: ['mini app', 'open app', 'open mini', 'miniapp', 'ilova'],
@@ -29,6 +29,18 @@ function pushScore(
   }
 
   scores.push({ intent, reasons: [reason], score });
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasPhrase(text: string, phrase: string): boolean {
+  return new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(phrase)}(?=$|[^\\p{L}\\p{N}])`, 'u').test(text);
+}
+
+function containsAny(text: string, phrases: string[]): boolean {
+  return phrases.some((phrase) => hasPhrase(text, phrase));
 }
 
 export function parseIntent(text: string, amount: AmountParseResult, date: DateParseResult): IntentScore[] {
@@ -58,27 +70,27 @@ export function parseIntent(text: string, amount: AmountParseResult, date: DateP
     pushScore(scores, 'create_debt', 0.06, 'date_present');
   }
 
-  if (/\b(qarz|debt|долг)\b/u.test(normalized) && /\b(qaytardim|repay|вернул)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['qarz', 'debt', 'долг']) && containsAny(normalized, ['qaytardim', 'repay', 'вернул'])) {
     pushScore(scores, 'repay_debt', 0.6, 'debt_repayment_phrase');
   }
 
-  if (/\b(chiqim|expense|расход)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['chiqim', 'expense', 'расход', 'расходы', 'потратил'])) {
     pushScore(scores, 'create_expense', 0.34, 'expense_direct_keyword');
   }
 
-  if (/\b(oldim|received|получил|tushdi|зарплата|salary|maosh|oylik)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['oldim', 'received', 'получил', 'получила', 'получили', 'tushdi', 'зарплата', 'зарплату', 'salary', 'maosh', 'oylik'])) {
     pushScore(scores, 'create_income', 0.34, 'income_direct_keyword');
   }
 
-  if (/\b(kirim|income|доход)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['kirim', 'income', 'доход'])) {
     pushScore(scores, 'create_income', 0.34, 'income_direct_keyword');
   }
 
-  if (/\b(qarz|debt|долг)\b/u.test(normalized) && /\b(berdi|gave|lent|одолжил|oldim|borrowed)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['qarz', 'debt', 'долг']) && containsAny(normalized, ['berdi', 'gave', 'lent', 'одолжил', 'oldim', 'borrowed'])) {
     pushScore(scores, 'create_debt', 0.44, 'debt_direct_phrase');
   }
 
-  if (/\b(limit|лимит)\b/u.test(normalized)) {
+  if (containsAny(normalized, ['limit', 'лимит'])) {
     pushScore(scores, 'set_limit', 0.44, 'limit_direct_keyword');
   }
 

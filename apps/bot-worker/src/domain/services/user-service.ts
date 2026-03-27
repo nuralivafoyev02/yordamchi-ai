@@ -1,6 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { AppLocale, ThemeKey, UserProfileSnapshot } from '@yordamchi/shared';
-import { FREE_PLAN_LIMITS, startOfMonthIso } from '@yordamchi/shared';
+import type {
+  AppLocale,
+  CategorySnapshot,
+  CurrencyCode,
+  DashboardSnapshot,
+  NotificationSettingsSnapshot,
+  ThemeKey,
+  TransactionDirection,
+  UsageCounterSnapshot,
+  UsageMetric,
+  UserProfileSnapshot,
+} from '@yordamchi/shared';
+import { FREE_PLAN_LIMITS, locales, startOfMonthIso } from '@yordamchi/shared';
 import { AppError } from '../../core/errors/app-error';
 import { Logger } from '../../core/logger/logger';
 import { assertSupabaseSingle } from '../../lib/supabase-helpers';
@@ -20,12 +31,31 @@ export class UserService {
   ) {}
 
   async upsertTelegramUser(actor: TelegramActor, timezone: string) {
+    const existingUserResponse = await this.client
+      .from('users')
+      .select('language_code, timezone')
+      .eq('telegram_user_id', actor.id)
+      .maybeSingle();
+
+    if (existingUserResponse.error) {
+      throw new AppError('Failed to load Telegram user locale', 500, 'DATABASE_ERROR', {
+        details: existingUserResponse.error,
+      });
+    }
+
+    const existingLocale = typeof existingUserResponse.data?.language_code === 'string' && locales.includes(existingUserResponse.data.language_code as AppLocale)
+      ? (existingUserResponse.data.language_code as AppLocale)
+      : null;
+    const existingTimezone = typeof existingUserResponse.data?.timezone === 'string' && existingUserResponse.data.timezone.length > 0
+      ? existingUserResponse.data.timezone
+      : null;
+
     const { data, error } = await this.client.rpc('upsert_telegram_user', {
       p_first_name: actor.first_name,
-      p_language_code: (actor.language_code?.slice(0, 2) ?? 'uz') as AppLocale,
+      p_language_code: existingLocale ?? 'uz',
       p_last_name: actor.last_name ?? null,
       p_telegram_user_id: actor.id,
-      p_timezone: timezone,
+      p_timezone: existingTimezone ?? timezone,
       p_username: actor.username ?? null,
     });
 
@@ -41,7 +71,7 @@ export class UserService {
   async findByTelegramUserId(telegramUserId: number) {
     const response = await this.client
       .from('users')
-      .select('id, telegram_user_id, language_code, timezone')
+      .select('id, telegram_user_id, username, language_code, timezone')
       .eq('telegram_user_id', telegramUserId)
       .single();
 
@@ -52,12 +82,12 @@ export class UserService {
     const [userResponse, profileResponse, subscriptionResponse, usageResponse] = await Promise.all([
       this.client
         .from('users')
-        .select('id, telegram_user_id, language_code, timezone')
+        .select('id, telegram_user_id, username, language_code, timezone')
         .eq('id', userId)
         .single(),
       this.client
         .from('user_profiles')
-        .select('display_name, role, theme_preference, base_currency')
+        .select('*')
         .eq('user_id', userId)
         .single(),
       this.client.rpc('subscription_snapshot', {
@@ -71,7 +101,7 @@ export class UserService {
     ]);
 
     const user = assertSupabaseSingle(userResponse, 'Failed to load user');
-    const profile = assertSupabaseSingle(profileResponse, 'Failed to load profile');
+    const profile = assertSupabaseSingle(profileResponse, 'Failed to load profile') as Record<string, unknown>;
     const subscription = subscriptionResponse.data?.[0] ?? {
       current_period_end: null,
       is_premium: false,
@@ -85,7 +115,7 @@ export class UserService {
       });
     }
 
-    const usage = Object.entries(FREE_PLAN_LIMITS).map(([metric, limit]) => {
+    const usage: UsageCounterSnapshot[] = (Object.entries(FREE_PLAN_LIMITS) as Array<[UsageMetric, number | null]>).map(([metric, limit]) => {
       const used = usageResponse.data?.find((entry) => entry.metric === metric)?.used_count ?? 0;
       return {
         limit: subscription.is_premium ? null : limit,
@@ -95,10 +125,11 @@ export class UserService {
     });
 
     return {
-      baseCurrency: profile.base_currency,
-      displayName: profile.display_name,
+      baseCurrency: String(profile.base_currency ?? 'UZS') as CurrencyCode,
+      displayName: String(profile.display_name),
       locale: user.language_code,
-      role: profile.role,
+      phoneNumber: this.extractPhoneNumber(profile),
+      role: String(profile.role) as UserProfileSnapshot['role'],
       subscription: {
         currentPeriodEnd: subscription.current_period_end,
         isPremium: subscription.is_premium,
@@ -109,8 +140,85 @@ export class UserService {
       themePreference: profile.theme_preference as ThemeKey,
       timezone: user.timezone ?? timeZone,
       usage,
+      username: user.username,
       userId: user.id,
     };
+  }
+
+  async savePhoneNumber(userId: string, rawPhoneNumber: string) {
+    const normalized = this.normalizePhoneNumber(rawPhoneNumber);
+    const verifiedAt = new Date().toISOString();
+
+    const { error } = await this.client
+      .from('user_profiles')
+      .update({
+        phone_number: normalized,
+        phone_verified_at: verifiedAt,
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      if (error.code === '42703') {
+        const { error: fallbackError } = await this.client
+          .from('user_profiles')
+          .update({
+            bio: JSON.stringify({
+              phoneNumber: normalized,
+              phoneVerifiedAt: verifiedAt,
+            }),
+          })
+          .eq('user_id', userId);
+
+        if (fallbackError) {
+          throw new AppError('Failed to save phone number', 500, 'DATABASE_ERROR', { details: fallbackError });
+        }
+
+        this.logger.warn('phone_number_saved_using_bio_fallback', { userId });
+        return normalized;
+      }
+
+      if (error.code === '23505') {
+        throw new AppError('Phone number already linked to another account', 409, 'PHONE_ALREADY_USED');
+      }
+
+      throw new AppError('Failed to save phone number', 500, 'DATABASE_ERROR', { details: error });
+    }
+
+    this.logger.info('phone_number_saved', { userId });
+
+    return normalized;
+  }
+
+  private normalizePhoneNumber(rawPhoneNumber: string) {
+    const compact = rawPhoneNumber.replace(/[^\d+]/g, '');
+    const normalized = compact.startsWith('+')
+      ? `+${compact.slice(1).replace(/\D/g, '')}`
+      : `+${compact.replace(/\D/g, '')}`;
+
+    if (!/^\+\d{7,20}$/.test(normalized)) {
+      throw new AppError('Invalid phone number format', 400, 'INVALID_PHONE_NUMBER');
+    }
+
+    return normalized;
+  }
+
+  private extractPhoneNumber(profile: Record<string, unknown>) {
+    if (typeof profile.phone_number === 'string' && profile.phone_number) {
+      return profile.phone_number;
+    }
+
+    if (typeof profile.bio === 'string' && profile.bio.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(profile.bio) as { phoneNumber?: unknown };
+        if (typeof parsed.phoneNumber === 'string') {
+          return parsed.phoneNumber;
+        }
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }
 
   async updateProfile(
@@ -155,7 +263,80 @@ export class UserService {
     this.logger.info('profile_updated', { userId });
   }
 
-  async buildDashboard(userId: string, timeZone: string) {
+  async getNotificationSettings(userId: string): Promise<NotificationSettingsSnapshot> {
+    await this.client.from('notification_settings').upsert({
+      user_id: userId,
+    });
+
+    const response = await this.client
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    const settings = assertSupabaseSingle(response, 'Failed to load notification settings') as Record<string, unknown>;
+
+    return {
+      botNotificationsEnabled: Boolean(settings.bot_notifications_enabled),
+      debtRemindersEnabled: Boolean(settings.debt_reminders_enabled),
+      limitRemindersEnabled: Boolean(settings.limit_reminders_enabled),
+      planRemindersEnabled: Boolean(settings.plan_reminders_enabled),
+      quietHoursFrom: typeof settings.quiet_hours_from === 'string' ? settings.quiet_hours_from : null,
+      quietHoursTo: typeof settings.quiet_hours_to === 'string' ? settings.quiet_hours_to : null,
+      subscriptionRemindersEnabled: Boolean(settings.subscription_reminders_enabled),
+    };
+  }
+
+  async updateNotificationSettings(
+    userId: string,
+    payload: Partial<NotificationSettingsSnapshot>,
+  ) {
+    const { error } = await this.client
+      .from('notification_settings')
+      .upsert({
+        bot_notifications_enabled: payload.botNotificationsEnabled,
+        debt_reminders_enabled: payload.debtRemindersEnabled,
+        limit_reminders_enabled: payload.limitRemindersEnabled,
+        plan_reminders_enabled: payload.planRemindersEnabled,
+        quiet_hours_from: payload.quietHoursFrom,
+        quiet_hours_to: payload.quietHoursTo,
+        subscription_reminders_enabled: payload.subscriptionRemindersEnabled,
+        user_id: userId,
+      });
+
+    if (error) {
+      throw new AppError('Failed to update notification settings', 500, 'DATABASE_ERROR', { details: error });
+    }
+
+    this.logger.info('notification_settings_updated', { userId });
+    return this.getNotificationSettings(userId);
+  }
+
+  async listCategories(userId: string): Promise<CategorySnapshot[]> {
+    const { data, error } = await this.client
+      .from('categories')
+      .select('id, icon, is_active, is_system, kind, name, slug')
+      .eq('is_active', true)
+      .or(`user_id.eq.${userId},user_id.is.null`)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw new AppError('Failed to load categories', 500, 'DATABASE_ERROR', { details: error });
+    }
+
+    return (data ?? []).map((category) => ({
+      id: category.id,
+      icon: category.icon,
+      isActive: category.is_active,
+      isSystem: category.is_system,
+      kind: category.kind,
+      name: category.name,
+      slug: category.slug,
+    }));
+  }
+
+  async buildDashboard(userId: string, timeZone: string): Promise<DashboardSnapshot> {
     const monthStart = startOfMonthIso(new Date(), timeZone);
     const today = new Date().toISOString();
 
@@ -213,10 +394,14 @@ export class UserService {
 
     const summary = (transactions.data ?? []).reduce(
       (accumulator, item) => {
-        const currency = item.original_currency;
-        const direction = item.direction;
+        const currency = String(item.original_currency);
+        const direction = item.direction as TransactionDirection;
         const bucket = accumulator[currency] ?? { expense: 0, income: 0 };
-        bucket[direction] += Number(item.original_amount);
+
+        if (direction === 'expense' || direction === 'income') {
+          bucket[direction] += Number(item.original_amount);
+        }
+
         accumulator[currency] = bucket;
         return accumulator;
       },

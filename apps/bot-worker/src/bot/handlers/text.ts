@@ -1,7 +1,8 @@
 import { t, type ParsedCommand } from '@yordamchi/shared';
 import { confirmationKeyboard, miniAppKeyboard } from '../keyboards/common';
-import { confirmationMessage, fallbackMessage, helpMessage, successMessage } from '../messages/formatter';
+import { confirmationMessage, fallbackMessage, helpMessage, successMessage, summaryMessage } from '../messages/formatter';
 import { executeParsedAction } from './executor';
+import { hasRegisteredPhone, promptPhoneRegistration, resolveTelegramUserContext } from './registration';
 import type { AppContext } from '../../core/app-context';
 import type { TelegramMessage } from '../../core/telegram/types';
 
@@ -20,16 +21,16 @@ async function handlePendingConfirmation(app: AppContext, userId: string, locale
   if (YES_VALUES.has(normalized) && payload?.payload) {
     await executeParsedAction(app, userId, locale, timeZone, payload.payload);
     await app.stateService.clear(userId);
-    await app.telegram.sendMessage(message.chat.id, 'Saved successfully.', {
-      reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+    await app.telegram.sendMessage(message.chat.id, successMessage(locale, payload.payload.intent), {
+      reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return true;
   }
 
   if (NO_VALUES.has(normalized)) {
     await app.stateService.clear(userId);
-    await app.telegram.sendMessage(message.chat.id, 'Cancelled. Send a corrected message.', {
-      reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+    await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.pendingCancelled'), {
+      reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return true;
   }
@@ -42,10 +43,19 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
     return;
   }
 
-  const timezone = 'Asia/Tashkent';
-  const userId = await app.userService.upsertTelegramUser(message.from, timezone);
-  const profile = await app.userService.getProfileSnapshot(userId, timezone);
+  const context = await resolveTelegramUserContext(app, message);
+
+  if (!context) {
+    return;
+  }
+
+  const { profile, userId } = context;
   const locale = profile.locale;
+
+  if (!hasRegisteredPhone(profile)) {
+    await promptPhoneRegistration(app, message.chat.id, locale, userId, 'bot.phonePending');
+    return;
+  }
 
   if (await handlePendingConfirmation(app, userId, locale, profile.timezone, message)) {
     return;
@@ -60,14 +70,14 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
   if (parsed.intent === 'help') {
     await app.telegram.sendMessage(message.chat.id, helpMessage(locale), {
       parse_mode: 'HTML',
-      reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+      reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
   }
 
   if (parsed.intent === 'open_miniapp') {
     await app.telegram.sendMessage(message.chat.id, t(locale, 'common.openMiniApp'), {
-      reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+      reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
   }
@@ -76,10 +86,14 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
     const dashboard = await app.userService.buildDashboard(userId, profile.timezone);
     await app.telegram.sendMessage(
       message.chat.id,
-      `<b>Summary</b>\nPlans: ${dashboard.upcomingPlans.length}\nDebts: ${dashboard.openDebts.length}\nAccounts: ${dashboard.accounts.length}`,
+      summaryMessage(locale, {
+        accounts: dashboard.accounts.length,
+        debts: dashboard.openDebts.length,
+        plans: dashboard.upcomingPlans.length,
+      }),
       {
         parse_mode: 'HTML',
-        reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+        reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       },
     );
     return;
@@ -87,7 +101,14 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
 
   if (parsed.intent === 'unknown') {
     await app.telegram.sendMessage(message.chat.id, fallbackMessage(locale), {
-      reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+      reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
+    });
+    return;
+  }
+
+  if (parsed.intent === 'repay_debt') {
+    await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.clarification'), {
+      reply_markup: miniAppKeyboard(locale, `${app.env.TELEGRAM_MINIAPP_URL}?tab=finance`),
     });
     return;
   }
@@ -96,7 +117,7 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
     if (parsed.confidence >= 0.78) {
       await executeParsedAction(app, userId, locale, profile.timezone, parsed);
       await app.telegram.sendMessage(message.chat.id, successMessage(locale, parsed.intent), {
-        reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+        reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       });
       return;
     }
@@ -109,12 +130,12 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
     });
     await app.telegram.sendMessage(message.chat.id, confirmationMessage(locale, parsed), {
       parse_mode: 'HTML',
-      reply_markup: confirmationKeyboard(),
+      reply_markup: confirmationKeyboard(locale),
     });
   } catch (error) {
     if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'PREMIUM_REQUIRED') {
       await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.premiumRequired'), {
-        reply_markup: miniAppKeyboard(app.env.TELEGRAM_MINIAPP_URL),
+        reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       });
       return;
     }

@@ -6,7 +6,7 @@ const CATEGORY_KEYWORDS: Record<TransactionDirection, Record<string, string[]>> 
     education: ['education', 'ta\'lim', 'oqish', 'study', 'course', 'kurs', 'обучение', 'учеба'],
     entertainment: ['kino', 'film', 'concert', 'fun', 'entertainment', 'развлечение', 'ko\'ngil'],
     food: ['food', 'ovqat', 'cafe', 'restoran', 'restaurant', 'еда', 'yemak'],
-    general: ['expense', 'chiqim', 'расход', 'xarajat', 'spent', 'sarf'],
+    general: ['expense', 'chiqim', 'расход', 'расходы', 'xarajat', 'spent', 'sarf', 'потратил'],
     health: ['health', 'doctor', 'dori', 'medicine', 'sog\'liq', 'здоровье', 'аптека'],
     shopping: ['shopping', 'xarid', 'магазин', 'pokupka', 'buy', 'купил'],
     tax: ['tax', 'soliq', 'налог'],
@@ -15,9 +15,9 @@ const CATEGORY_KEYWORDS: Record<TransactionDirection, Record<string, string[]>> 
   },
   income: {
     bonus: ['bonus', 'premiya', 'премия', 'reward'],
-    general: ['income', 'kirim', 'доход', 'received', 'oldim', 'earn', 'earned'],
+    general: ['income', 'kirim', 'доход', 'received', 'oldim', 'earn', 'earned', 'получил', 'получила', 'поступило'],
     gift: ['gift', 'sovg\'a', 'подарок'],
-    salary: ['salary', 'maosh', 'oylik', 'зарплата', 'ish haqi'],
+    salary: ['salary', 'maosh', 'oylik', 'зарплата', 'зарплату', 'ish haqi'],
   },
 };
 

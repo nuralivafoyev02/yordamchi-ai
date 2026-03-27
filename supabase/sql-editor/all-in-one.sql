@@ -115,6 +115,8 @@ create table if not exists public.users (
 create table if not exists public.user_profiles (
   user_id uuid primary key references public.users(id) on delete cascade,
   display_name text not null,
+  phone_number text,
+  phone_verified_at timestamptz,
   role user_role not null default 'user',
   theme_preference theme_key not null default 'blue',
   base_currency currency_code not null default 'UZS',
@@ -122,7 +124,10 @@ create table if not exists public.user_profiles (
   premium_badge_visible boolean not null default true,
   bio text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint user_profiles_phone_number_check check (
+    phone_number is null or phone_number ~ '^\+[0-9]{7,20}$'
+  )
 );
 
 create table if not exists public.notification_settings (
@@ -403,6 +408,7 @@ create table if not exists public.user_states (
 
 create index if not exists users_status_idx on public.users (status);
 create index if not exists user_profiles_role_idx on public.user_profiles (role);
+create unique index if not exists user_profiles_phone_number_unique_idx on public.user_profiles (phone_number) where phone_number is not null;
 
 create index if not exists subscriptions_user_id_idx on public.subscriptions (user_id);
 create unique index if not exists subscriptions_one_active_idx

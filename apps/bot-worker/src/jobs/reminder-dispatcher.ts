@@ -12,7 +12,7 @@ export async function dispatchReminders(app: AppContext) {
         `<b>${reminder.title}</b>\n${reminder.body}`,
         {
           parse_mode: 'HTML',
-          reply_markup: miniAppKeyboard(reminder.deep_link ?? app.env.TELEGRAM_MINIAPP_URL),
+          reply_markup: miniAppKeyboard(user.locale, reminder.deep_link ?? app.env.TELEGRAM_MINIAPP_URL),
         },
       );
       await app.reminderService.markSent(reminder.id);

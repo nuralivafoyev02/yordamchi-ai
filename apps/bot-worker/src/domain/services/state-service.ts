@@ -42,6 +42,20 @@ export class StateService {
     }
   }
 
+  async setAwaitingPhone(userId: string) {
+    const { error } = await this.client.from('user_states').upsert({
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      payload: {},
+      state_key: 'awaiting_phone',
+      step_key: 'share_contact',
+      user_id: userId,
+    });
+
+    if (error) {
+      throw new AppError('Failed to save phone registration state', 500, 'DATABASE_ERROR', { details: error });
+    }
+  }
+
   async clear(userId: string) {
     const { error } = await this.client.from('user_states').delete().eq('user_id', userId);
 

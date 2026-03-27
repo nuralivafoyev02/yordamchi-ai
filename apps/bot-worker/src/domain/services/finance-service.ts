@@ -69,6 +69,7 @@ export class FinanceService {
 
     if (data.status === 'scheduled' && new Date(data.occurred_at).getTime() > Date.now()) {
       await this.reminderService.enqueue({
+        actionLabel: t(locale, 'common.openMiniApp'),
         body: data.note ?? t(locale, 'finance.expense'),
         dedupeKey: `transaction:${data.id}:${data.occurred_at}`,
         deepLink: `${this.env.TELEGRAM_MINIAPP_URL}?tab=finance`,
@@ -109,6 +110,7 @@ export class FinanceService {
 
     if (data.due_at && new Date(data.due_at).getTime() > Date.now()) {
       await this.reminderService.enqueue({
+        actionLabel: t(locale, 'common.openMiniApp'),
         body: data.counterparty_name,
         dedupeKey: `debt:${data.id}:${data.due_at}`,
         deepLink: `${this.env.TELEGRAM_MINIAPP_URL}?tab=finance`,
@@ -179,12 +181,18 @@ export class FinanceService {
   }
 
   async buildMonthlySummary(userId: string, monthStart: string) {
+    const monthAnchor = new Date(`${monthStart}T00:00:00.000Z`);
+    const nextMonthStart = new Date(Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth() + 1, 1))
+      .toISOString()
+      .slice(0, 10);
+
     const { data, error } = await this.client
       .from('transactions')
       .select('direction, original_amount, original_currency, occurred_at, note, status')
       .eq('user_id', userId)
       .is('deleted_at', null)
       .gte('occurred_at', `${monthStart}T00:00:00.000Z`)
+      .lt('occurred_at', `${nextMonthStart}T00:00:00.000Z`)
       .order('occurred_at', { ascending: false })
       .limit(50);
 

@@ -1,10 +1,10 @@
 import type { EnvBindings } from '../config/env';
 import { AppError } from '../errors/app-error';
-import type { TelegramInlineKeyboard } from './types';
+import type { TelegramInlineKeyboard, TelegramRemoveKeyboard, TelegramReplyKeyboard } from './types';
 
 interface SendMessageOptions {
   parse_mode?: 'HTML' | 'MarkdownV2';
-  reply_markup?: TelegramInlineKeyboard;
+  reply_markup?: TelegramInlineKeyboard | TelegramReplyKeyboard | TelegramRemoveKeyboard;
 }
 
 export class TelegramClient {

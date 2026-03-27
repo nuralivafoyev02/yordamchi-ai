@@ -10,7 +10,7 @@ export function parseReminder(text: string): ReminderParseResult {
 
   if (explicitMatch) {
     const value = Number(explicitMatch[1]);
-    const unit = explicitMatch[2];
+    const unit = explicitMatch[2] ?? '';
     const offsetMinutes = MINUTE_WORDS.some((word) => unit.startsWith(word))
       ? value
       : HOUR_WORDS.some((word) => unit.startsWith(word))

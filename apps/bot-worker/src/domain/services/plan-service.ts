@@ -42,6 +42,7 @@ export class PlanService {
     const reminderAt = new Date(new Date(data.due_at).getTime() - (data.reminder_offset_minutes ?? 60) * 60 * 1000);
     if (reminderAt.getTime() > Date.now()) {
       await this.reminderService.enqueue({
+        actionLabel: t(locale, 'common.openMiniApp'),
         body: data.title,
         dedupeKey: `plan:${data.id}:${reminderAt.toISOString()}`,
         deepLink: `${this.env.TELEGRAM_MINIAPP_URL}?tab=home`,

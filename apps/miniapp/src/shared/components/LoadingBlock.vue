@@ -5,7 +5,7 @@
 <style scoped>
 .loading-block {
   animation: pulse 1.3s infinite ease-in-out;
-  background: linear-gradient(135deg, rgba(31, 114, 255, 0.12), rgba(31, 114, 255, 0.05));
+  background: linear-gradient(90deg, #252529, #2d2d31, #252529);
   border-radius: var(--radius-md);
   height: 88px;
 }

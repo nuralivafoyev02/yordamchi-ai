@@ -12,12 +12,14 @@ const MULTIPLIERS: Record<string, number> = {
   m: 1_000_000,
   thousand: 1_000,
   тыс: 1_000,
+  тысяч: 1_000,
+  тысячи: 1_000,
   тысяча: 1_000,
   миллион: 1_000_000,
 };
 
 const AMOUNT_PATTERN =
-  /(?<value>\d{1,3}(?:[ .]\d{3})+|\d+(?:[.,]\d+)?)(?:\s*(?<multiplier>ming|thousand|тыс|тысяча|milliona|million|миллион|mln|k|m))?/iu;
+  /(?<value>\d{1,3}(?:[ .]\d{3})+|\d+(?:[.,]\d+)?)(?:\s*(?<multiplier>ming|thousand|тыс|тысяч|тысячи|тысяча|milliona|million|миллион|mln|k|m))?/iu;
 
 function parseNumeric(raw: string): number {
   const normalized = raw.replace(/ /g, '').replace(',', '.');

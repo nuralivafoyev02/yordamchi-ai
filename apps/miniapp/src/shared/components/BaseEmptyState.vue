@@ -14,8 +14,8 @@ defineProps<{
 
 <style scoped>
 .empty {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.45));
-  border: 1px dashed var(--border);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--space-6);
   text-align: center;

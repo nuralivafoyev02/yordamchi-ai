@@ -15,34 +15,34 @@ defineProps<{
   border-radius: 999px;
   display: inline-flex;
   font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 7px 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 6px 10px;
   text-transform: uppercase;
 }
 
 .badge--info {
-  background: var(--accent-soft);
+  background: rgba(var(--accent-rgb), 0.16);
   color: var(--accent-strong);
 }
 
 .badge--success {
-  background: rgba(25, 144, 95, 0.12);
+  background: rgba(54, 209, 106, 0.14);
   color: var(--success);
 }
 
 .badge--warning {
-  background: rgba(197, 124, 0, 0.12);
+  background: rgba(255, 177, 26, 0.14);
   color: var(--warning);
 }
 
 .badge--danger {
-  background: rgba(214, 73, 73, 0.12);
+  background: rgba(255, 107, 92, 0.14);
   color: var(--danger);
 }
 
 .badge--premium {
-  background: linear-gradient(135deg, rgba(255, 219, 149, 0.5), rgba(228, 179, 45, 0.2));
-  color: #9c6500;
+  background: rgba(240, 193, 82, 0.16);
+  color: var(--accent-strong);
 }
 </style>

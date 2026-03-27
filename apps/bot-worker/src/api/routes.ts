@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import {
   adminGrantPremiumSchema,
   createCategoryLimitSchema,
@@ -8,6 +8,7 @@ import {
   createTransactionSchema,
   parseCommandSchema,
   sessionExchangeSchema,
+  updateNotificationSettingsSchema,
   updateProfileSchema,
 } from '@yordamchi/shared';
 import type { AppContext } from '../core/app-context';
@@ -21,10 +22,18 @@ type ApiVariables = {
   session: Awaited<ReturnType<typeof verifyAppSession>>;
 };
 
-async function bearerAuth(
-  c: Parameters<Parameters<Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>['use']>[1]>[0],
-  next: Parameters<Parameters<Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>['use']>[1]>[1],
-) {
+type ApiRoute = {
+  Bindings: EnvBindings;
+  Variables: ApiVariables;
+};
+
+function assertPhoneRegistered(phoneNumber: string | null | undefined) {
+  if (!phoneNumber) {
+    throw new AppError('Phone registration required', 403, 'PHONE_REGISTRATION_REQUIRED');
+  }
+}
+
+const bearerAuth: MiddlewareHandler<ApiRoute> = async (c, next) => {
   const authHeader = c.req.header('authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -33,14 +42,16 @@ async function bearerAuth(
   }
 
   const session = await verifyAppSession(c.env.APP_JWT_SECRET, token);
+
+  if (!session.phone_registered) {
+    throw new AppError('Phone registration required', 403, 'PHONE_REGISTRATION_REQUIRED');
+  }
+
   c.set('session', session);
   await next();
-}
+};
 
-async function adminOnly(
-  c: Parameters<Parameters<Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>['use']>[1]>[0],
-  next: Parameters<Parameters<Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>['use']>[1]>[1],
-) {
+const adminOnly: MiddlewareHandler<ApiRoute> = async (c, next) => {
   const session = c.get('session');
 
   if (!['admin', 'owner'].includes(session.role)) {
@@ -48,20 +59,37 @@ async function adminOnly(
   }
 
   await next();
-}
+};
 
 export function createApiRouter() {
-  const api = new Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>();
+  const api = new Hono<ApiRoute>();
+
+  api.options('/v1/*', (c) => c.body(null, 204));
 
   api.post('/v1/session/exchange', async (c) => {
     const app = c.get('app');
     const body = sessionExchangeSchema.parse(await c.req.json());
-    const verified = await verifyTelegramInitData(body.initData, c.env.TELEGRAM_BOT_TOKEN);
+    let verified;
+
+    try {
+      verified = await verifyTelegramInitData(body.initData, c.env.TELEGRAM_BOT_TOKEN);
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      throw new AppError('Invalid Telegram init data', 401, 'INVALID_INIT_DATA', {
+        cause: error instanceof Error ? error.message : 'Unknown init data error',
+      });
+    }
+
     const userId = await app.userService.upsertTelegramUser(verified.user, body.timezone);
     const profile = await app.userService.getProfileSnapshot(userId, body.timezone);
+    assertPhoneRegistered(profile.phoneNumber);
     const session = await signAppSession(c.env.APP_JWT_SECRET, {
       app_user_id: profile.userId,
       locale: profile.locale,
+      phone_registered: Boolean(profile.phoneNumber),
       role: profile.role,
       telegram_user_id: profile.telegramUserId,
       theme: profile.themePreference,
@@ -82,6 +110,7 @@ export function createApiRouter() {
     const app = c.get('app');
     const session = c.get('session');
     const profile = await app.userService.getProfileSnapshot(session.app_user_id, 'Asia/Tashkent');
+    assertPhoneRegistered(profile.phoneNumber);
     const dashboard = await app.userService.buildDashboard(session.app_user_id, profile.timezone);
     return c.json({ dashboard, profile });
   });
@@ -165,6 +194,28 @@ export function createApiRouter() {
     const payload = updateProfileSchema.parse(await c.req.json());
     await app.userService.updateProfile(session.app_user_id, payload);
     return c.json({ ok: true });
+  });
+
+  api.get('/v1/profile/notifications', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    const settings = await app.userService.getNotificationSettings(session.app_user_id);
+    return c.json({ settings });
+  });
+
+  api.patch('/v1/profile/notifications', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    const payload = updateNotificationSettingsSchema.parse(await c.req.json());
+    const settings = await app.userService.updateNotificationSettings(session.app_user_id, payload);
+    return c.json({ settings });
+  });
+
+  api.get('/v1/categories', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    const categories = await app.userService.listCategories(session.app_user_id);
+    return c.json({ categories });
   });
 
   api.get('/v1/admin/overview', async (c) => {

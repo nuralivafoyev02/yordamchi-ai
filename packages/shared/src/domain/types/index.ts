@@ -1,6 +1,5 @@
 import type {
   AppLocale,
-  CategoryKind,
   CurrencyCode,
   DebtDirection,
   IntentName,
@@ -47,6 +46,8 @@ export interface UserProfileSnapshot {
   userId: string;
   telegramUserId: number;
   displayName: string;
+  username?: string | null;
+  phoneNumber?: string | null;
   locale: AppLocale;
   timezone: string;
   themePreference: ThemeKey;
@@ -215,6 +216,93 @@ export interface CalendarDayIndicator {
   hasLargeExpense: boolean;
   totalExpense: number;
   currency: CurrencyCode;
+}
+
+export interface CalendarDayItem {
+  id: string;
+  kind: 'debt' | 'plan' | 'reminder' | 'transaction';
+  title?: string | null;
+  note?: string | null;
+  counterparty_name?: string | null;
+  entity_type?: string | null;
+  [key: string]: unknown;
+}
+
+export interface CalendarDayDetails {
+  date: string;
+  hasDebtDue: boolean;
+  hasLargeExpense: boolean;
+  hasPlans: boolean;
+  hasReminders: boolean;
+  items: CalendarDayItem[];
+}
+
+export interface CalendarMonthSnapshot {
+  days: CalendarDayDetails[];
+  monthStart: string;
+}
+
+export interface DashboardAccount {
+  id: string;
+  name: string;
+  currency: CurrencyCode;
+  current_balance: number;
+  is_default: boolean;
+}
+
+export interface DashboardPlan {
+  id: string;
+  title: string;
+  due_at: string;
+  priority: PlanPriority;
+  status: PlanStatus;
+}
+
+export interface DashboardDebt {
+  id: string;
+  counterparty_name: string;
+  principal_amount: number;
+  principal_currency: CurrencyCode;
+  due_at: string | null;
+  status: string;
+  direction: DebtDirection;
+}
+
+export interface DashboardSnapshot {
+  accounts: DashboardAccount[];
+  monthSummary: Record<string, { expense: number; income: number }>;
+  openDebts: DashboardDebt[];
+  todayPlans: DashboardPlan[];
+  upcomingPlans: DashboardPlan[];
+}
+
+export interface NotificationSettingsSnapshot {
+  botNotificationsEnabled: boolean;
+  debtRemindersEnabled: boolean;
+  limitRemindersEnabled: boolean;
+  planRemindersEnabled: boolean;
+  quietHoursFrom?: string | null;
+  quietHoursTo?: string | null;
+  subscriptionRemindersEnabled: boolean;
+}
+
+export interface CategorySnapshot {
+  id: string;
+  icon?: string | null;
+  isActive: boolean;
+  isSystem: boolean;
+  kind: 'expense' | 'income' | 'general';
+  name: string;
+  slug: string;
+}
+
+export interface SessionBootstrapResponse {
+  dashboard: DashboardSnapshot;
+  profile: UserProfileSnapshot;
+}
+
+export interface SessionExchangeResponse extends SessionBootstrapResponse {
+  session: AppSession;
 }
 
 export interface AdminGrantPremiumInput {

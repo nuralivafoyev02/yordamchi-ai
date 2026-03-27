@@ -21,18 +21,20 @@ defineProps<{
   align-items: end;
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: var(--space-4);
 }
 
 h2 {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: 24px;
+  font-weight: 700;
   margin: 0;
 }
 
 p {
   color: var(--text-muted);
   font-size: var(--text-sm);
-  margin: 0 0 6px;
+  margin: 0 0 8px;
 }
 </style>
