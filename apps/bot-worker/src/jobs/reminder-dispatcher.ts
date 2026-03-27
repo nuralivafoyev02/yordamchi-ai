@@ -1,12 +1,49 @@
 import { miniAppKeyboard } from '../bot/keyboards/common';
 import type { AppContext } from '../core/app-context';
+import { getNextReminderWindow, isWithinQuietHours, reminderSettingEnabled } from './reminder-policy';
 
 export async function dispatchReminders(app: AppContext) {
   const reminders = await app.reminderService.claimBatch(crypto.randomUUID(), 30);
 
   for (const reminder of reminders) {
     try {
-      const user = await app.userService.getProfileSnapshot(reminder.user_id, 'Asia/Tashkent');
+      const user = await app.userService.getProfileSnapshot(reminder.user_id, 'UTC');
+      const settings = await app.userService.getNotificationSettings(reminder.user_id);
+
+      if (!reminderSettingEnabled(reminder.reminder_kind, settings)) {
+        await app.reminderService.cancel(reminder.id, 'notification_suppressed_by_settings');
+        await app.logService.botLog({
+          context: {
+            reminderId: reminder.id,
+            reminderKind: reminder.reminder_kind,
+          },
+          event: 'reminder_suppressed_by_settings',
+          level: 'warn',
+          message: 'Reminder skipped because notification settings disabled it.',
+          userId: reminder.user_id,
+        });
+        continue;
+      }
+
+      const dispatchBaseTime = new Date(Math.max(Date.now(), new Date(reminder.scheduled_for).getTime()));
+
+      if (isWithinQuietHours(dispatchBaseTime, user.timezone, settings)) {
+        const nextWindow = getNextReminderWindow(dispatchBaseTime, user.timezone, settings).toISOString();
+        await app.reminderService.reschedule(reminder.id, nextWindow, 'quiet_hours_rescheduled');
+        await app.logService.botLog({
+          context: {
+            nextWindow,
+            reminderId: reminder.id,
+            reminderKind: reminder.reminder_kind,
+          },
+          event: 'reminder_rescheduled_for_quiet_hours',
+          level: 'info',
+          message: 'Reminder rescheduled because user quiet hours are active.',
+          userId: reminder.user_id,
+        });
+        continue;
+      }
+
       await app.telegram.sendMessage(
         user.telegramUserId,
         `<b>${reminder.title}</b>\n${reminder.body}`,

@@ -28,7 +28,7 @@ onMounted(async () => {
 
   await sessionStore.bootstrap();
   uiStore.setLocale((sessionStore.profile?.locale as AppLocale | undefined) ?? 'uz');
-  uiStore.applyTheme((sessionStore.profile?.themePreference as 'blue' | 'gold' | undefined) ?? 'blue');
+  uiStore.applyTheme(sessionStore.profile?.themePreference ?? 'blue');
   markTelegramReady();
 
   const deepLinkTab = route.query.tab;
@@ -65,26 +65,17 @@ onMounted(async () => {
 
 <style scoped>
 .app-shell {
-  background: var(--tg-bg);
+  background: var(--bg);
   min-height: 100dvh;
-  overflow: hidden;
-  padding: calc(var(--safe-top) + 8px) 12px 0;
+  overflow-x: hidden;
+  padding: calc(var(--safe-top) + 10px) 12px 0;
   position: relative;
-}
-
-.app-shell::before {
-  background: radial-gradient(circle at top center, color-mix(in srgb, var(--tg-button) 10%, transparent), transparent 56%);
-  content: '';
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 0;
 }
 
 .app-shell__content {
   min-height: 100dvh;
   margin: 0 auto;
-  max-width: 460px;
+  max-width: 430px;
   padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 18px);
   position: relative;
   z-index: 1;

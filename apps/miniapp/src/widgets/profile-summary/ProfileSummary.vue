@@ -49,9 +49,14 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 
 <style scoped>
 .profile-hero {
-  min-height: 168px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--hero-glow) 34%, transparent), transparent 38%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--success) 18%, transparent), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
+  min-height: 184px;
   overflow: hidden;
-  padding: 14px 14px 16px;
+  padding: 16px;
   position: relative;
 }
 
@@ -86,7 +91,7 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 
 .profile-hero__header h2 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   line-height: 1.1;
   margin: 0;
 }
@@ -102,16 +107,17 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 
 .profile-hero__avatar {
   align-items: center;
-  border: 3px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--bg) 18%);
+  border: 2px solid color-mix(in srgb, var(--accent) 32%, transparent);
   border-radius: 999px;
   color: var(--accent-strong);
   display: inline-flex;
   font-family: var(--font-display);
   font-size: 24px;
   font-weight: 700;
-  height: 62px;
+  height: 70px;
   justify-content: center;
-  width: 62px;
+  width: 70px;
 }
 
 .profile-hero__center strong {
@@ -122,15 +128,15 @@ const isPremium = computed(() => Boolean((props.profile?.subscription as Record<
 }
 
 .profile-hero__meta {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  border-radius: 16px;
+  border-radius: 18px;
   color: var(--accent-strong);
   display: grid;
   gap: 4px;
   justify-items: center;
   max-width: 100%;
-  padding: 8px 12px;
+  padding: 9px 12px;
   width: min(100%, 520px);
 }
 

@@ -42,15 +42,15 @@ describe('parser command flow', () => {
   });
 
   it('classifies income correctly', () => {
-    const parsed = parseCommand('dadamdan 50 dollar oldim', {
+    const parsed = parseCommand('dadamdan 50 ming oldim', {
       locale: 'uz',
       now: FIXED_NOW,
       timeZone: 'Asia/Tashkent',
     });
 
     expect(parsed.intent).toBe('create_income');
-    expect(parsed.transaction?.currency).toBe('USD');
-    expect(parsed.transaction?.amount).toBe(50);
+    expect(parsed.transaction?.currency).toBe('UZS');
+    expect(parsed.transaction?.amount).toBe(50_000);
   });
 
   it('classifies russian expense and income phrases', () => {
@@ -74,16 +74,38 @@ describe('parser command flow', () => {
   });
 
   it('classifies debt and extracts counterparty', () => {
-    const parsed = parseCommand('Ali 100 dollar qarz berdi', {
+    const parsed = parseCommand('Ali 100 ming qarz berdi', {
       locale: 'uz',
       now: FIXED_NOW,
       timeZone: 'Asia/Tashkent',
     });
 
     expect(parsed.intent).toBe('create_debt');
-    expect(parsed.debt?.currency).toBe('USD');
-    expect(parsed.debt?.amount).toBe(100);
+    expect(parsed.debt?.currency).toBe('UZS');
+    expect(parsed.debt?.amount).toBe(100_000);
     expect(parsed.debt?.direction).toBe('borrowed');
+  });
+
+  it('classifies paid-for-someone phrases as expense', () => {
+    const parsed = parseCommand("Ali uchun 80 ming to'ladim", {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('create_expense');
+    expect(parsed.transaction?.amount).toBe(80_000);
+  });
+
+  it('classifies repayment phrases separately from generic income', () => {
+    const parsed = parseCommand('Ali 50 ming qaytardi', {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('repay_debt');
+    expect(parsed.confidence).toBeGreaterThan(0.45);
   });
 
   it('classifies limit setup', () => {

@@ -7,8 +7,8 @@ import type { AppContext } from '../../core/app-context';
 import type { TelegramCallbackQuery } from '../../core/telegram/types';
 
 export async function handleCallback(app: AppContext, callbackQuery: TelegramCallbackQuery) {
-  const userId = await app.userService.upsertTelegramUser(callbackQuery.from, 'Asia/Tashkent');
-  const profile = await app.userService.getProfileSnapshot(userId, 'Asia/Tashkent');
+  const userId = await app.userService.upsertTelegramUser(callbackQuery.from, 'UTC');
+  const profile = await app.userService.getProfileSnapshot(userId, 'UTC');
   const chatId = callbackQuery.message?.chat.id;
   const locale = profile.locale;
   const timeZone = profile.timezone;

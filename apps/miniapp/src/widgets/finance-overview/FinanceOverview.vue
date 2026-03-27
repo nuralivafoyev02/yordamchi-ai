@@ -93,6 +93,9 @@ function accountTone(index: number) {
 <template>
   <section class="overview">
     <BaseCard class="hero-card">
+      <div class="hero-card__glow hero-card__glow--accent" />
+      <div class="hero-card__glow hero-card__glow--success" />
+
       <div class="hero-card__head">
         <div>
           <p>{{ text('finance.monthlyOverview') }}</p>
@@ -198,8 +201,44 @@ function accountTone(index: number) {
 }
 
 .hero-card {
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--hero-glow) 34%, transparent), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-card__glow {
+  border-radius: 999px;
+  filter: blur(48px);
+  opacity: 0.22;
+  position: absolute;
+}
+
+.hero-card__glow--accent {
+  background: color-mix(in srgb, var(--hero-glow) 54%, transparent);
+  height: 180px;
+  right: -68px;
+  top: -42px;
+  width: 180px;
+}
+
+.hero-card__glow--success {
+  background: color-mix(in srgb, var(--success) 30%, transparent);
+  bottom: -48px;
+  height: 150px;
+  left: -48px;
+  width: 150px;
+}
+
+.hero-card__head,
+.metric-grid,
+.quick-action-bar {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-card__head {
@@ -211,15 +250,15 @@ function accountTone(index: number) {
 
 .hero-card__head p,
 .account-card__header p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .hero-card__head h2 {
-  font-size: clamp(24px, 7vw, 30px);
+  font-size: clamp(26px, 7vw, 34px);
   font-weight: var(--weight-title);
   line-height: 1.05;
   margin: 0;
@@ -228,8 +267,8 @@ function accountTone(index: number) {
 .net-pill {
   align-content: center;
   align-self: stretch;
-  background: var(--success-soft);
-  border: 1px solid color-mix(in srgb, var(--success) 22%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 72%, var(--success-soft) 28%);
+  border: 1px solid color-mix(in srgb, var(--success) 18%, transparent);
   border-radius: var(--radius-md);
   display: grid;
   gap: 4px;
@@ -238,7 +277,7 @@ function accountTone(index: number) {
 }
 
 .net-pill small {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
@@ -264,8 +303,8 @@ function accountTone(index: number) {
 }
 
 .metric-card {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-soft) 90%, transparent);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
   gap: 8px;
@@ -273,7 +312,7 @@ function accountTone(index: number) {
 }
 
 .metric-card span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
@@ -288,9 +327,9 @@ function accountTone(index: number) {
 }
 
 .quick-action-bar__title span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -302,8 +341,8 @@ function accountTone(index: number) {
 
 .quick-action {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   color: var(--text);
   cursor: pointer;
@@ -318,7 +357,6 @@ function accountTone(index: number) {
 
 .quick-action:hover {
   border-color: rgba(var(--accent-rgb), 0.28);
-  transform: translateY(-1px);
 }
 
 .quick-action span {
@@ -345,6 +383,9 @@ function accountTone(index: number) {
 }
 
 .flow-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   gap: 10px;
 }
@@ -362,7 +403,7 @@ function accountTone(index: number) {
 }
 
 .flow-card__progress {
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
   border-radius: 999px;
   height: 6px;
   overflow: hidden;
@@ -376,13 +417,16 @@ function accountTone(index: number) {
 }
 
 .flow-card__meta {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   display: grid;
   gap: 6px;
   font-size: var(--text-xs);
 }
 
 .account-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   gap: 10px;
 }
@@ -395,38 +439,35 @@ function accountTone(index: number) {
 
 .account-card__header h3 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
 .account-list {
   display: grid;
-  gap: 0;
+  gap: 8px;
 }
 
 .account-row {
   align-items: center;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--divider);
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   color: var(--text);
   cursor: pointer;
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   min-height: 54px;
-  padding: 10px 0;
+  padding: 12px;
   text-align: left;
-}
-
-.account-row:first-child {
-  border-top: none;
 }
 
 .account-row__icon {
   align-items: center;
-  border-radius: 999px;
-  color: var(--tg-button-text);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--accent-contrast);
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
@@ -449,12 +490,12 @@ function accountTone(index: number) {
 .account-row__copy small,
 .account-row__meta small,
 .account-card__empty {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
 .account-row__progress {
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
   border-radius: 999px;
   height: 5px;
   overflow: hidden;

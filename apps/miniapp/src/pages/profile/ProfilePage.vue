@@ -9,6 +9,7 @@ import { useText } from '../../shared/composables/useText';
 import { useSessionStore } from '../../app/stores/session';
 import { useUiStore } from '../../app/stores/ui';
 import { apiClient } from '../../shared/api/client';
+import { resolveTelegramTimeZone } from '../../shared/lib/telegram';
 import ThemePicker from '../../features/profile-settings/ThemePicker.vue';
 import NotificationToggleList from '../../features/notifications/NotificationToggleList.vue';
 import ProfileSummary from '../../widgets/profile-summary/ProfileSummary.vue';
@@ -36,6 +37,7 @@ const sessionStore = useSessionStore();
 const uiStore = useUiStore();
 const { text } = useText();
 const toast = useToast();
+const premiumThemes = new Set<ThemeKey>(['gold', 'mint']);
 
 const activeSheet = ref<ProfileSheet | null>(null);
 const categories = ref<CategorySnapshot[]>([]);
@@ -48,7 +50,7 @@ const sheetError = ref('');
 const editForm = reactive({
   baseCurrency: 'UZS' as 'USD' | 'UZS',
   displayName: '',
-  timezone: 'Asia/Tashkent',
+  timezone: resolveTelegramTimeZone(),
 });
 
 const profile = computed(() => sessionStore.profile);
@@ -71,14 +73,14 @@ const subscriptionEnd = computed(() => {
 const primaryRows = computed(() => [
   {
     action: text('common.edit'),
-    icon: '👤',
+    icon: 'PR',
     key: 'edit' as const,
     subtitle: profile.value?.phoneNumber ?? text('profile.phone'),
     title: text('profile.editProfile'),
   },
   {
     action: isPremium.value ? text('common.premium') : text('premium.cta'),
-    icon: '💎',
+    icon: 'PM',
     key: 'subscription' as const,
     subtitle: isPremium.value && subscriptionEnd.value ? subscriptionEnd.value : text('profile.subscriptionExpired'),
     title: text('profile.subscriptionLabel'),
@@ -87,43 +89,43 @@ const primaryRows = computed(() => [
 
 const settingsRows = computed(() => [
   {
-    icon: '🔔',
+    icon: 'NT',
     key: 'notifications' as const,
     subtitle: text('profile.notificationsHint'),
     title: text('common.notifications'),
   },
   {
-    icon: '🗂️',
+    icon: 'CT',
     key: 'categories' as const,
     subtitle: text('finance.limits'),
     title: text('profile.categories'),
   },
   {
-    icon: '📘',
+    icon: 'GD',
     key: 'guide' as const,
     subtitle: text('common.support'),
     title: text('profile.guide'),
   },
   {
-    icon: '🌍',
+    icon: 'LG',
     key: 'language' as const,
     subtitle: String(profile.value?.locale ?? 'uz').toUpperCase(),
     title: text('profile.languageChange'),
   },
   {
-    icon: '💬',
+    icon: 'SP',
     key: 'support' as const,
     subtitle: 'support@yordamchi.ai',
     title: text('profile.supportCenter'),
   },
   {
-    icon: '📋',
+    icon: 'TM',
     key: 'terms' as const,
     subtitle: text('profile.terms'),
     title: text('profile.terms'),
   },
   {
-    icon: '🛡️',
+    icon: 'PP',
     key: 'privacy' as const,
     subtitle: text('profile.privacy'),
     title: text('profile.privacy'),
@@ -201,7 +203,7 @@ onMounted(() => {
 function syncEditForm() {
   editForm.baseCurrency = profile.value?.baseCurrency ?? 'UZS';
   editForm.displayName = profile.value?.displayName ?? '';
-  editForm.timezone = profile.value?.timezone ?? 'Asia/Tashkent';
+  editForm.timezone = profile.value?.timezone ?? resolveTelegramTimeZone();
 }
 
 function formatUsage(metric: 'debt_create' | 'finance_entry_create' | 'plan_create') {
@@ -288,7 +290,7 @@ async function saveProfileDetails() {
     sessionStore.setProfilePatch({
       baseCurrency: editForm.baseCurrency,
       displayName: editForm.displayName.trim() || (profile.value?.displayName ?? ''),
-      timezone: editForm.timezone.trim() || (profile.value?.timezone ?? 'Asia/Tashkent'),
+      timezone: editForm.timezone.trim() || (profile.value?.timezone ?? resolveTelegramTimeZone()),
     });
     toast.show({
       message: text('common.saved'),
@@ -307,7 +309,7 @@ async function saveProfileDetails() {
 }
 
 async function updateTheme(theme: ThemeKey) {
-  if (theme === 'gold' && !isPremium.value) {
+  if (premiumThemes.has(theme) && !isPremium.value) {
     activeSheet.value = 'subscription';
     return;
   }
@@ -429,7 +431,12 @@ async function quickThemeSwitch() {
     return;
   }
 
-  await updateTheme('blue');
+  if (uiStore.theme === 'gold') {
+    await updateTheme('mint');
+    return;
+  }
+
+  await updateTheme(uiStore.theme === 'graphite' ? 'blue' : 'graphite');
 }
 
 function handlePrimaryAction(key: ProfileSheet) {
@@ -502,7 +509,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
         @keydown.enter.prevent="openSheet('pin')"
       >
         <div class="group-row__lead">
-          <span class="group-row__icon">🔐</span>
+          <span class="group-row__icon">PN</span>
           <div>
             <strong>{{ text('profile.pinCode') }}</strong>
             <small>{{ hasLocalPin ? text('profile.pinSet') : text('profile.pinNotSet') }}</small>
@@ -515,7 +522,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
       <article class="group-row">
         <div class="group-row__lead">
-          <span class="group-row__icon">🌙</span>
+          <span class="group-row__icon">TH</span>
           <div>
             <strong>{{ text('profile.themeMode') }}</strong>
             <small>{{ text('profile.themeHint') }}</small>
@@ -530,9 +537,9 @@ function handleRowAction(key: ProfileSheet | 'support') {
           <small>{{ text('profile.languageHint') }}</small>
         </div>
         <div class="locale-card__grid">
-          <BaseButton variant="secondary" @click="updateLocale('uz')">UZ</BaseButton>
-          <BaseButton variant="secondary" @click="updateLocale('en')">EN</BaseButton>
-          <BaseButton variant="secondary" @click="updateLocale('ru')">RU</BaseButton>
+          <BaseButton :variant="profile?.locale === 'uz' ? 'primary' : 'secondary'" @click="updateLocale('uz')">UZ</BaseButton>
+          <BaseButton :variant="profile?.locale === 'en' ? 'primary' : 'secondary'" @click="updateLocale('en')">EN</BaseButton>
+          <BaseButton :variant="profile?.locale === 'ru' ? 'primary' : 'secondary'" @click="updateLocale('ru')">RU</BaseButton>
         </div>
       </div>
     </BaseCard>
@@ -569,7 +576,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
         @keydown.enter.prevent="downloadExport"
       >
         <div class="group-row__lead">
-          <span class="group-row__icon">📤</span>
+          <span class="group-row__icon">EX</span>
           <div>
             <strong>{{ text('profile.jsonExport') }}</strong>
             <small>{{ text('profile.export') }}</small>
@@ -680,9 +687,9 @@ function handleRowAction(key: ProfileSheet | 'support') {
     <BaseModal :open="activeSheet === 'language'" :title="text('profile.languageChange')" @close="activeSheet = null">
       <p class="sheet-note">{{ text('profile.languageHint') }}</p>
       <div class="locale-card__grid">
-        <BaseButton variant="secondary" @click="updateLocale('uz')">UZ</BaseButton>
-        <BaseButton variant="secondary" @click="updateLocale('en')">EN</BaseButton>
-        <BaseButton variant="secondary" @click="updateLocale('ru')">RU</BaseButton>
+        <BaseButton :variant="profile?.locale === 'uz' ? 'primary' : 'secondary'" @click="updateLocale('uz')">UZ</BaseButton>
+        <BaseButton :variant="profile?.locale === 'en' ? 'primary' : 'secondary'" @click="updateLocale('en')">EN</BaseButton>
+        <BaseButton :variant="profile?.locale === 'ru' ? 'primary' : 'secondary'" @click="updateLocale('ru')">RU</BaseButton>
       </div>
     </BaseModal>
 
@@ -712,11 +719,13 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 <style scoped>
 .page {
-  display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .group-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   overflow: hidden;
   padding: 0;
@@ -728,8 +737,8 @@ function handleRowAction(key: ProfileSheet | 'support') {
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  min-height: 58px;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 12px 14px;
 }
 
 .group-row:first-child {
@@ -755,10 +764,18 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 .group-row__icon {
   align-items: center;
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--bg) 12%);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  color: var(--accent);
   display: inline-flex;
-  font-size: 18px;
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
   justify-content: center;
-  width: 24px;
+  letter-spacing: 0.08em;
+  min-width: 32px;
+  width: 32px;
+  height: 32px;
 }
 
 .group-row__lead strong {
@@ -770,32 +787,32 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .group-row__lead small {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   display: block;
   font-size: var(--text-xs);
   line-height: 1.35;
 }
 
 .group-row__chevron {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: 18px;
   line-height: 1;
 }
 
 .group-row__pill {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 12px;
   color: var(--accent-strong);
   cursor: pointer;
   display: inline-flex;
-  font-size: var(--text-body);
+  font-size: var(--text-xs);
   font-weight: var(--weight-interactive);
   justify-content: center;
   line-height: 1.2;
   max-width: 170px;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 34px;
+  padding: 0 12px;
   text-align: center;
   white-space: normal;
 }
@@ -804,7 +821,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
   border-top: 1px solid var(--divider);
   display: grid;
   gap: 10px;
-  padding: 10px 12px 12px;
+  padding: 12px 14px 14px;
 }
 
 .locale-card__head strong {
@@ -815,7 +832,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .locale-card__head small {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
@@ -836,7 +853,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .sheet-field span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
   font-weight: var(--weight-interactive);
 }
@@ -844,10 +861,10 @@ function handleRowAction(key: ProfileSheet | 'support') {
 .sheet-field input,
 .sheet-field select {
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  color: var(--tg-text);
-  min-height: 40px;
+  color: var(--text);
+  min-height: var(--field-height);
   padding: 0 14px;
 }
 
@@ -863,7 +880,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 .sheet-copy small,
 .sheet-note {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-body);
   line-height: 1.5;
   margin: 0;
@@ -883,7 +900,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 .usage-item {
   align-items: center;
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
@@ -891,7 +908,7 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .usage-item span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
@@ -906,10 +923,10 @@ function handleRowAction(key: ProfileSheet | 'support') {
 }
 
 .category-block p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
   font-weight: var(--weight-interactive);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
@@ -922,9 +939,9 @@ function handleRowAction(key: ProfileSheet | 'support') {
 
 .category-chip {
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  font-size: var(--text-body);
+  font-size: var(--text-xs);
   padding: 6px 10px;
 }
 

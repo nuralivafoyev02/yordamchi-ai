@@ -6,10 +6,14 @@
 
 <style scoped>
 .card {
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 12px 14px;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
 }
 </style>

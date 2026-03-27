@@ -120,8 +120,7 @@ app.post('/telegram/webhook', async (c) => {
 
   try {
     if (update.message?.text?.startsWith('/')) {
-      const locale = normalizeLocale(update.message.from?.language_code?.slice(0, 2));
-      await handleCommand(appContext, update.message, locale);
+      await handleCommand(appContext, update.message);
     } else if (update.message?.contact) {
       await handleContactRegistration(appContext, update.message);
     } else if (update.message?.text) {

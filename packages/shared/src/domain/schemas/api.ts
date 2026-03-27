@@ -27,13 +27,13 @@ export const intentNameSchema = z.enum(intentNames);
 
 export const sessionExchangeSchema = z.object({
   initData: z.string().min(10),
-  timezone: z.string().default('Asia/Tashkent'),
+  timezone: z.string().min(1).default('UTC'),
 });
 
 export const parseCommandSchema = z.object({
   text: z.string().min(1).max(1000),
   locale: localeSchema.default('uz'),
-  timezone: z.string().default('Asia/Tashkent'),
+  timezone: z.string().min(1).default('UTC'),
   defaultCurrency: currencyCodeSchema.default('UZS'),
   nowIso: z.string().datetime().optional(),
 });
@@ -93,6 +93,15 @@ export const createCategoryLimitSchema = z.object({
   currency: currencyCodeSchema,
   monthStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   warningThresholdPercent: z.number().min(1).max(100).default(80),
+});
+
+export const updateCategoryLimitSchema = z.object({
+  amount: z.number().positive().optional(),
+  categoryId: z.string().uuid().optional(),
+  currency: currencyCodeSchema.optional(),
+  isActive: z.boolean().optional(),
+  monthStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  warningThresholdPercent: z.number().min(1).max(100).optional(),
 });
 
 export const updateProfileSchema = z.object({

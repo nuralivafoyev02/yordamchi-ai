@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  create: [mode: 'debt' | 'expense' | 'plan'];
+  create: [mode: 'debt' | 'expense' | 'income' | 'plan'];
 }>();
 
 const { locale, text } = useText();
@@ -51,6 +51,7 @@ function toneClass(kind: CalendarDayItem['kind']) {
       </div>
       <div class="drawer__actions">
         <BaseButton variant="secondary" @click="emit('create', 'plan')">{{ text('common.plan') }}</BaseButton>
+        <BaseButton variant="secondary" @click="emit('create', 'income')">{{ text('finance.income') }}</BaseButton>
         <BaseButton variant="secondary" @click="emit('create', 'expense')">{{ text('common.expense') }}</BaseButton>
         <BaseButton variant="secondary" @click="emit('create', 'debt')">{{ text('common.debt') }}</BaseButton>
       </div>
@@ -72,6 +73,9 @@ function toneClass(kind: CalendarDayItem['kind']) {
 
 <style scoped>
 .drawer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   gap: 12px;
 }
@@ -82,28 +86,28 @@ function toneClass(kind: CalendarDayItem['kind']) {
 }
 
 .drawer__header p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .drawer__header h2 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
 .drawer__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .drawer__actions :deep(.button) {
-  max-height: 36px;
-  min-height: 36px;
+  max-height: 34px;
+  min-height: 34px;
 }
 
 .drawer__list {
@@ -128,6 +132,7 @@ function toneClass(kind: CalendarDayItem['kind']) {
   display: inline-block;
   flex: 0 0 36px;
   height: 36px;
+  position: relative;
   width: 36px;
 }
 

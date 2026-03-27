@@ -4,7 +4,7 @@ export type AppLocale = (typeof locales)[number];
 export const currencyCodes = ['UZS', 'USD'] as const;
 export type CurrencyCode = (typeof currencyCodes)[number];
 
-export const themeKeys = ['blue', 'gold'] as const;
+export const themeKeys = ['blue', 'gold', 'graphite', 'mint'] as const;
 export type ThemeKey = (typeof themeKeys)[number];
 
 export const userRoles = ['user', 'support', 'admin', 'owner'] as const;

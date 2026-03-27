@@ -60,7 +60,8 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 .tabs-shell {
   bottom: 0;
   left: 0;
-  padding: 0 12px calc(var(--safe-bottom) + 8px);
+  padding: 0 14px calc(var(--safe-bottom) + 12px);
+  pointer-events: none;
   position: fixed;
   right: 0;
   z-index: var(--nav-z);
@@ -68,28 +69,33 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 
 .tabs {
   align-items: center;
-  background: color-mix(in srgb, var(--tg-bg) 92%, var(--tg-secondary-bg) 8%);
-  border-top: 1px solid color-mix(in srgb, var(--tg-hint) 20%, transparent);
-  box-shadow: 0 -1px 8px color-mix(in srgb, var(--tg-text) 6%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  border-top-color: color-mix(in srgb, var(--text-muted) 20%, transparent);
+  border-radius: 24px;
   display: grid;
   gap: 6px;
   grid-template-columns: repeat(3, 1fr);
   margin: 0 auto;
   max-width: 460px;
-  padding: 8px 10px 0;
+  padding: 8px 10px 10px;
+  pointer-events: auto;
 }
 
 .tabs__item {
   align-items: center;
-  border-radius: 14px;
-  color: var(--tg-hint);
+  border-radius: 18px;
+  color: var(--text-soft);
   display: grid;
   gap: 4px;
   justify-items: center;
-  min-height: 48px;
-  padding: 4px 6px 8px;
+  min-height: 52px;
+  padding: 6px 6px 8px;
   text-align: center;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
 
 .tabs__icon {
@@ -104,7 +110,8 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 }
 
 .tabs__item--active {
-  background: color-mix(in srgb, var(--tg-button) 16%, transparent);
-  color: var(--tg-button);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--accent);
 }
 </style>

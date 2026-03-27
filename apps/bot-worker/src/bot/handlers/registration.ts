@@ -6,7 +6,7 @@ import type { AppContext } from '../../core/app-context';
 import { AppError } from '../../core/errors/app-error';
 import type { TelegramMessage } from '../../core/telegram/types';
 
-const DEFAULT_TIMEZONE = 'Asia/Tashkent';
+const DEFAULT_TIMEZONE = 'UTC';
 
 export function hasRegisteredPhone(profile: UserProfileSnapshot) {
   return Boolean(profile.phoneNumber);

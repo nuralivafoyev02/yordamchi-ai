@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { CreateCategoryLimitInput, CreateDebtInput, CreateDebtPaymentInput, CreateTransactionInput } from '@yordamchi/shared';
+import type { CategoryLimitSnapshot, CreateCategoryLimitInput, CreateDebtInput, CreateDebtPaymentInput, CreateTransactionInput } from '@yordamchi/shared';
 import { t } from '@yordamchi/shared';
 import { AppError } from '../../core/errors/app-error';
 import type { EnvBindings } from '../../core/config/env';
@@ -167,8 +167,10 @@ export class FinanceService {
 
   async createCategoryLimit(userId: string, input: CreateCategoryLimitInput) {
     const { error } = await this.client.from('category_limits').upsert({
+      alert_on_exceed: true,
       category_id: input.categoryId,
       currency: input.currency,
+      is_active: true,
       limit_amount: input.amount,
       month_start: input.monthStart,
       user_id: userId,
@@ -177,6 +179,157 @@ export class FinanceService {
 
     if (error) {
       throw new AppError('Failed to save category limit', 500, 'DATABASE_ERROR', { details: error });
+    }
+  }
+
+  async listCategoryLimits(userId: string, monthStart: string): Promise<CategoryLimitSnapshot[]> {
+    const monthAnchor = new Date(`${monthStart}T00:00:00.000Z`);
+    const nextMonthStart = new Date(Date.UTC(monthAnchor.getUTCFullYear(), monthAnchor.getUTCMonth() + 1, 1))
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: limits, error: limitsError } = await this.client
+      .from('category_limits')
+      .select(`
+        id,
+        currency,
+        month_start,
+        limit_amount,
+        warning_threshold_percent,
+        alert_on_exceed,
+        is_active,
+        category:categories (
+          id,
+          icon,
+          is_active,
+          is_system,
+          kind,
+          name,
+          slug
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('month_start', monthStart)
+      .order('created_at', { ascending: false });
+
+    if (limitsError) {
+      throw new AppError('Failed to load category limits', 500, 'DATABASE_ERROR', { details: limitsError });
+    }
+
+    const categoryIds = (limits ?? [])
+      .map((limit) => {
+        const category = Array.isArray(limit.category) ? limit.category[0] : limit.category;
+        return category?.id as string | undefined;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    if (!limits?.length || !categoryIds.length) {
+      return [];
+    }
+
+    const { data: transactions, error: transactionsError } = await this.client
+      .from('transactions')
+      .select('category_id, original_amount, original_currency')
+      .eq('user_id', userId)
+      .eq('direction', 'expense')
+      .is('deleted_at', null)
+      .gte('occurred_at', `${monthStart}T00:00:00.000Z`)
+      .lt('occurred_at', `${nextMonthStart}T00:00:00.000Z`)
+      .in('category_id', categoryIds);
+
+    if (transactionsError) {
+      throw new AppError('Failed to load limit progress', 500, 'DATABASE_ERROR', { details: transactionsError });
+    }
+
+    const spentByKey = new Map<string, number>();
+
+    (transactions ?? []).forEach((transaction) => {
+      const key = `${transaction.category_id}:${transaction.original_currency}`;
+      spentByKey.set(key, (spentByKey.get(key) ?? 0) + Number(transaction.original_amount ?? 0));
+    });
+
+    return (limits ?? []).flatMap((limit) => {
+      const category = Array.isArray(limit.category) ? limit.category[0] : limit.category;
+
+      if (!category) {
+        return [];
+      }
+
+      const limitAmount = Number(limit.limit_amount ?? 0);
+      const spentAmount = spentByKey.get(`${category.id}:${limit.currency}`) ?? 0;
+      const progressPercent = limitAmount > 0
+        ? Math.min(999, Number(((spentAmount / limitAmount) * 100).toFixed(1)))
+        : 0;
+      const warningThresholdPercent = Number(limit.warning_threshold_percent ?? 80);
+      const status = progressPercent >= 100
+        ? 'exceeded'
+        : progressPercent >= warningThresholdPercent
+          ? 'warning'
+          : 'safe';
+
+      return [{
+        alertOnExceed: Boolean(limit.alert_on_exceed),
+        category: {
+          id: category.id,
+          icon: category.icon,
+          isActive: Boolean(category.is_active),
+          isSystem: Boolean(category.is_system),
+          kind: category.kind,
+          name: category.name,
+          slug: category.slug,
+        },
+        currency: limit.currency,
+        id: limit.id,
+        isActive: Boolean(limit.is_active),
+        limitAmount,
+        monthStart: limit.month_start,
+        progressPercent,
+        remainingAmount: limitAmount - spentAmount,
+        spentAmount,
+        status,
+        warningThresholdPercent,
+      } satisfies CategoryLimitSnapshot];
+    });
+  }
+
+  async updateCategoryLimit(
+    userId: string,
+    limitId: string,
+    input: Partial<CreateCategoryLimitInput & { isActive: boolean }>,
+  ) {
+    const payload: Record<string, unknown> = {};
+
+    if (input.amount !== undefined) payload.limit_amount = input.amount;
+    if (input.categoryId !== undefined) payload.category_id = input.categoryId;
+    if (input.currency !== undefined) payload.currency = input.currency;
+    if (input.isActive !== undefined) payload.is_active = input.isActive;
+    if (input.monthStart !== undefined) payload.month_start = input.monthStart;
+    if (input.warningThresholdPercent !== undefined) payload.warning_threshold_percent = input.warningThresholdPercent;
+
+    const { data, error } = await this.client
+      .from('category_limits')
+      .update(payload)
+      .eq('id', limitId)
+      .eq('user_id', userId)
+      .select('id')
+      .single();
+
+    if (error || !data) {
+      throw new AppError('Failed to update category limit', 500, 'DATABASE_ERROR', { details: error });
+    }
+
+    return data;
+  }
+
+  async archiveCategoryLimit(userId: string, limitId: string) {
+    const { error } = await this.client
+      .from('category_limits')
+      .update({ is_active: false })
+      .eq('id', limitId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new AppError('Failed to archive category limit', 500, 'DATABASE_ERROR', { details: error });
     }
   }
 

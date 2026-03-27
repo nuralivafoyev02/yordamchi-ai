@@ -36,7 +36,7 @@ export async function handleCommand(app: AppContext, message: TelegramMessage) {
 
   if (command === '/summary' && message.from) {
     const user = await app.userService.findByTelegramUserId(message.from.id);
-    const dashboard = await app.userService.buildDashboard(user.id, user.timezone ?? 'Asia/Tashkent');
+    const dashboard = await app.userService.buildDashboard(user.id, user.timezone ?? 'UTC');
     await app.telegram.sendMessage(
       chatId,
       summaryMessage(context.locale, {

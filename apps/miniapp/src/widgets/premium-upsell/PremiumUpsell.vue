@@ -21,25 +21,28 @@ const { text } = useText();
 
 <style scoped>
 .upsell {
+  background:
+    linear-gradient(135deg, rgba(var(--accent-rgb), 0.16), transparent 62%),
+    var(--surface);
   border-color: rgba(var(--accent-rgb), 0.22);
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 p,
 span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
   margin: 0;
 }
 
 h3 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
 .upsell :deep(.button) {
-  min-height: 38px;
+  min-height: 40px;
 }
 </style>

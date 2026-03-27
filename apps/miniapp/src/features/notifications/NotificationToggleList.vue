@@ -33,8 +33,8 @@ const emit = defineEmits<{
 
 article {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
@@ -49,12 +49,12 @@ strong {
 }
 
 span {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
 .toggle {
-  background: var(--tg-button);
+  background: var(--accent);
   border: none;
   border-radius: 999px;
   cursor: pointer;
@@ -64,11 +64,12 @@ span {
 }
 
 .toggle--off {
-  background: var(--surface-strong);
+  background: var(--surface-contrast);
+  border: 1px solid var(--border);
 }
 
 .toggle::after {
-  background: var(--tg-button-text);
+  background: var(--accent-contrast);
   border-radius: 999px;
   content: "";
   height: 16px;

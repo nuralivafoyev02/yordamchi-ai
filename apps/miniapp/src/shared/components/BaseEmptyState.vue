@@ -17,9 +17,11 @@ defineProps<{
 <style scoped>
 .empty {
   align-items: center;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
   display: grid;
   gap: 6px;
   justify-items: center;
@@ -30,7 +32,8 @@ defineProps<{
 
 .empty__icon {
   align-items: center;
-  background: var(--bg-muted);
+  background: color-mix(in srgb, var(--surface-contrast) 92%, var(--bg) 8%);
+  border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-muted);
   display: inline-flex;

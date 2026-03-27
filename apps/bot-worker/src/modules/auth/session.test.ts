@@ -10,6 +10,7 @@ describe('app session signing', () => {
       role: 'admin',
       telegram_user_id: 12345,
       theme: 'blue',
+      timezone: 'UTC',
     });
 
     const verified = await verifyAppSession('test-secret', session.token);

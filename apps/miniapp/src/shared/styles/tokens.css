@@ -1,4 +1,5 @@
-:root {
+:root,
+:root[data-theme="blue"] {
   --font-display: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
   --font-body: "Inter", "SF Pro Text", "Segoe UI", sans-serif;
 
@@ -30,68 +31,108 @@
   --weight-semibold: 600;
   --weight-title: 600;
 
-  --radius-xl: 20px;
-  --radius-lg: 16px;
-  --radius-md: 14px;
+  --radius-xl: 28px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
   --radius-sm: 10px;
   --radius-xs: 6px;
 
   --button-height: 36px;
   --button-height-lg: 44px;
-  --nav-height: 62px;
+  --field-height: 46px;
+  --nav-height: 72px;
+  --nav-z: 1000;
   --tab-icon-size: 22px;
   --toast-z: 3000;
   --modal-backdrop-z: 2000;
   --modal-sheet-z: 2001;
 
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.18);
-  --overlay: rgba(10, 14, 20, 0.58);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.22);
+  --overlay: rgba(2, 6, 15, 0.72);
   --backdrop-blur: 16px;
 
-  --tg-bg: var(--tg-theme-bg-color, #111418);
-  --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #171c23);
-  --tg-text: var(--tg-theme-text-color, #f2f5fa);
-  --tg-hint: var(--tg-theme-hint-color, #8b93a7);
-  --tg-link: var(--tg-theme-link-color, #63a8ff);
-  --tg-button: var(--tg-theme-button-color, #2ea6ff);
-  --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+  --tg-bg: var(--tg-theme-bg-color, #070b14);
+  --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #0c1120);
+  --tg-text: var(--tg-theme-text-color, #f6f8ff);
+  --tg-hint: var(--tg-theme-hint-color, #a5adc4);
+  --tg-link: var(--tg-theme-link-color, #55a6ff);
+  --tg-button: var(--tg-theme-button-color, #ff6f61);
+  --tg-button-text: var(--tg-theme-button-text-color, #f6f8ff);
   --tg-destructive: var(--tg-theme-destructive-text-color, #ff6b5c);
 
-  --bg: var(--tg-bg);
-  --bg-muted: color-mix(in srgb, var(--tg-secondary-bg) 72%, var(--tg-bg));
-  --surface: color-mix(in srgb, var(--tg-secondary-bg) 86%, var(--tg-bg));
-  --surface-strong: color-mix(in srgb, var(--tg-secondary-bg) 94%, var(--tg-bg));
-  --surface-soft: color-mix(in srgb, var(--tg-secondary-bg) 76%, var(--tg-bg));
-  --text: var(--tg-text);
-  --text-muted: var(--tg-hint);
-  --text-soft: color-mix(in srgb, var(--tg-hint) 82%, transparent);
-  --border: color-mix(in srgb, var(--tg-hint) 18%, transparent);
-  --border-strong: color-mix(in srgb, var(--tg-hint) 28%, transparent);
-  --divider: color-mix(in srgb, var(--tg-hint) 16%, transparent);
+  --bg: #070b14;
+  --bg-muted: #0a0f1c;
+  --surface: #0c1120;
+  --surface-strong: #11182a;
+  --surface-soft: #151d31;
+  --surface-contrast: #1a2338;
+  --text: #f6f8ff;
+  --text-muted: #a5adc4;
+  --text-soft: #6f7892;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.06);
 
-  --accent: var(--tg-button);
-  --accent-rgb: 46, 166, 255;
-  --accent-contrast: var(--tg-button-text);
+  --accent: #ff6f61;
+  --accent-rgb: 255, 111, 97;
+  --accent-start: #ff4d6d;
+  --accent-end: #ff8a5b;
+  --accent-contrast: #f6f8ff;
   --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
   --accent-soft-strong: color-mix(in srgb, var(--accent) 24%, transparent);
   --accent-strong: color-mix(in srgb, var(--accent) 76%, var(--text) 24%);
+  --hero-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  --hero-glow: color-mix(in srgb, var(--accent) 42%, transparent);
+  --ai-start: #7a5cff;
+  --ai-end: #3ca8ff;
+  --ai-gradient: linear-gradient(135deg, var(--ai-start), var(--ai-end));
 
-  --success: #30c86b;
+  --success: #18d97a;
   --success-soft: color-mix(in srgb, var(--success) 16%, transparent);
-  --warning: #f4a62a;
+  --warning: #f5c84c;
   --warning-soft: color-mix(in srgb, var(--warning) 16%, transparent);
-  --danger: var(--tg-destructive);
+  --danger: #ff5d73;
   --danger-soft: color-mix(in srgb, var(--danger) 16%, transparent);
-  --info: var(--accent);
+  --info: #55a6ff;
   --info-soft: color-mix(in srgb, var(--info) 16%, transparent);
 }
 
 :root[data-theme="gold"] {
-  --accent: #d5a54a;
-  --accent-rgb: 213, 165, 74;
-  --accent-contrast: #211708;
+  --accent: #f0b548;
+  --accent-rgb: 240, 181, 72;
+  --accent-start: #f5c84c;
+  --accent-end: #ff8a5b;
+  --accent-contrast: #14100a;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
   --accent-soft-strong: color-mix(in srgb, var(--accent) 28%, transparent);
   --accent-strong: color-mix(in srgb, var(--accent) 84%, var(--text) 16%);
+  --hero-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  --hero-glow: color-mix(in srgb, var(--accent) 46%, transparent);
+}
+
+:root[data-theme="graphite"] {
+  --accent: #96a3b7;
+  --accent-rgb: 150, 163, 183;
+  --accent-start: #6f7892;
+  --accent-end: #a5adc4;
+  --accent-contrast: #0f141b;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-soft-strong: color-mix(in srgb, var(--accent) 28%, transparent);
+  --accent-strong: color-mix(in srgb, var(--accent) 82%, var(--text) 18%);
+  --hero-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  --hero-glow: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+:root[data-theme="mint"] {
+  --accent: #31d49c;
+  --accent-rgb: 79, 202, 168;
+  --accent-start: #18d97a;
+  --accent-end: #35f0a1;
+  --accent-contrast: #071c18;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-soft-strong: color-mix(in srgb, var(--accent) 28%, transparent);
+  --accent-strong: color-mix(in srgb, var(--accent) 82%, var(--text) 18%);
+  --hero-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+  --hero-glow: color-mix(in srgb, var(--accent) 42%, transparent);
 }

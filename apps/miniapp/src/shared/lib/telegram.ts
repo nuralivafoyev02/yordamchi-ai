@@ -47,6 +47,16 @@ export function getTelegramUserLocale(): AppLocale | null {
   return null;
 }
 
+export function resolveTelegramTimeZone(fallback = 'UTC') {
+  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  if (typeof browserTimeZone === 'string' && browserTimeZone.trim().length > 0) {
+    return browserTimeZone;
+  }
+
+  return fallback;
+}
+
 export function markTelegramReady() {
   window.Telegram?.WebApp?.expand?.();
   window.Telegram?.WebApp?.ready?.();

@@ -100,6 +100,17 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
   }
 
   if (parsed.intent === 'unknown') {
+    await app.logService.botLog({
+      context: {
+        confidence: parsed.confidence,
+        scores: parsed.scores,
+        text: message.text,
+      },
+      event: 'parser_unknown',
+      level: 'warn',
+      message: 'Parser could not classify the incoming message.',
+      userId,
+    });
     await app.telegram.sendMessage(message.chat.id, fallbackMessage(locale), {
       reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
@@ -107,6 +118,17 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
   }
 
   if (parsed.intent === 'repay_debt') {
+    await app.logService.botLog({
+      context: {
+        confidence: parsed.confidence,
+        scores: parsed.scores,
+        text: message.text,
+      },
+      event: 'parser_repayment_detected',
+      level: 'info',
+      message: 'Debt repayment phrase detected and redirected to finance flow.',
+      userId,
+    });
     await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.clarification'), {
       reply_markup: miniAppKeyboard(locale, `${app.env.TELEGRAM_MINIAPP_URL}?tab=finance`),
     });
@@ -122,6 +144,17 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
       return;
     }
 
+    await app.logService.botLog({
+      context: {
+        confidence: parsed.confidence,
+        scores: parsed.scores,
+        text: message.text,
+      },
+      event: 'parser_low_confidence',
+      level: 'warn',
+      message: 'Parser produced a low-confidence result and requested confirmation.',
+      userId,
+    });
     await app.stateService.setPendingConfirmation(userId, {
       action: parsed.intent === 'create_income' || parsed.intent === 'create_expense'
         ? 'create_transaction'

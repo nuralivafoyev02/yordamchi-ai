@@ -75,4 +75,37 @@ export class ReminderService {
       throw new AppError('Failed to mark reminder failed', 500, 'DATABASE_ERROR', { details: error });
     }
   }
+
+  async reschedule(reminderId: string, nextRetryAt: string, reason?: string) {
+    const { error } = await this.client
+      .from('reminders')
+      .update({
+        last_error: reason ?? null,
+        lease_expires_at: null,
+        lease_owner: null,
+        next_retry_at: nextRetryAt,
+        status: 'pending',
+      })
+      .eq('id', reminderId);
+
+    if (error) {
+      throw new AppError('Failed to reschedule reminder', 500, 'DATABASE_ERROR', { details: error });
+    }
+  }
+
+  async cancel(reminderId: string, reason?: string) {
+    const { error } = await this.client
+      .from('reminders')
+      .update({
+        last_error: reason ?? null,
+        lease_expires_at: null,
+        lease_owner: null,
+        status: 'cancelled',
+      })
+      .eq('id', reminderId);
+
+    if (error) {
+      throw new AppError('Failed to cancel reminder', 500, 'DATABASE_ERROR', { details: error });
+    }
+  }
 }

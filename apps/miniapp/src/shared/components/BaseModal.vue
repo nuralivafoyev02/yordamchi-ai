@@ -39,8 +39,8 @@ const emit = defineEmits<{
 <style scoped>
 .modal-backdrop {
   align-items: end;
-  backdrop-filter: blur(12px);
-  background: color-mix(in srgb, var(--tg-text) 34%, transparent);
+  backdrop-filter: blur(var(--backdrop-blur));
+  background: var(--overlay);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -50,13 +50,16 @@ const emit = defineEmits<{
 }
 
 .modal-sheet {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -10px 28px color-mix(in srgb, var(--tg-text) 16%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.36);
   display: grid;
   gap: 0;
-  max-height: min(88vh, 760px);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  max-height: min(88vh, calc(100dvh - var(--safe-top) - 12px));
   max-width: 520px;
   overflow: hidden;
   width: 100%;
@@ -64,7 +67,7 @@ const emit = defineEmits<{
 }
 
 .modal-sheet__handle {
-  background: color-mix(in srgb, var(--tg-hint) 40%, transparent);
+  background: color-mix(in srgb, var(--text-muted) 40%, transparent);
   border-radius: 999px;
   height: 4px;
   justify-self: center;
@@ -74,7 +77,7 @@ const emit = defineEmits<{
 
 .modal-sheet__header {
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--divider);
   display: flex;
   gap: 10px;
   justify-content: space-between;
@@ -90,9 +93,9 @@ const emit = defineEmits<{
 .modal-sheet__close {
   align-items: center;
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
-  color: var(--tg-text);
+  color: var(--text);
   cursor: pointer;
   display: inline-flex;
   font-size: 22px;
@@ -105,14 +108,19 @@ const emit = defineEmits<{
 .modal-sheet__body {
   display: grid;
   gap: 12px;
+  min-height: 0;
+  overscroll-behavior: contain;
   overflow-y: auto;
   padding: 0 14px 16px;
 }
 
 .modal-sheet__footer {
-  border-top: 1px solid var(--border);
+  background: var(--surface);
+  border-top: 1px solid var(--divider);
   display: grid;
   gap: 10px;
+  position: sticky;
+  bottom: 0;
   padding: 12px 14px calc(var(--safe-bottom) + 16px);
 }
 

@@ -3,13 +3,13 @@ import type { AmountParseResult, DateParseResult, IntentScore } from '../../doma
 import { normalizeText } from '../normalizers/normalizeText';
 
 const KEYWORDS: Record<Exclude<IntentName, 'unknown'>, string[]> = {
-  create_debt: ['qarz', 'debt', 'долг', 'lent', 'borrowed'],
-  create_expense: ['chiqim', 'expense', 'расход', 'расходы', 'pay', 'paid', 'xarajat', 'spent', 'soliq', 'потратил'],
-  create_income: ['kirim', 'income', 'доход', 'salary', 'maosh', 'oylik', 'received', 'oldim', 'зарплата', 'зарплату', 'получил'],
+  create_debt: ['qarz', 'debt', 'долг', 'lent', 'borrowed', 'odolzhil', 'odalzhil'],
+  create_expense: ['chiqim', 'expense', 'расход', 'расходы', 'pay', 'paid', 'xarajat', 'spent', 'soliq', 'потратил', "to'ladim", 'toladim', 'заплатил', 'оплатил'],
+  create_income: ['kirim', 'income', 'доход', 'salary', 'maosh', 'oylik', 'received', 'oldim', 'зарплата', 'зарплату', 'получил', 'tushdi'],
   create_plan: ['reja', 'plan', 'meeting', 'uchrashuv', 'task', 'todo', 'напомни', 'eslat'],
   help: ['help', 'yordam', 'pomosh', 'помощь', '/start'],
   open_miniapp: ['mini app', 'open app', 'open mini', 'miniapp', 'ilova'],
-  repay_debt: ['qaytardim', 'returned debt', 'repay', 'вернул'],
+  repay_debt: ['qaytardim', 'qaytardi', 'returned debt', 'returned', 'repay', 'вернул', 'вернула', 'qaytib berdi'],
   set_limit: ['limit', 'лимит', 'chegara'],
   view_summary: ['summary', 'hisobot', 'balans', 'overview', 'статистика', 'итог'],
 };
@@ -78,6 +78,10 @@ export function parseIntent(text: string, amount: AmountParseResult, date: DateP
     pushScore(scores, 'create_expense', 0.34, 'expense_direct_keyword');
   }
 
+  if (containsAny(normalized, ["to'ladim", 'toladim', 'toladim', 'заплатил', 'заплатила', 'оплатил', 'paid']) || (hasPhrase(normalized, 'uchun') && amount.amount)) {
+    pushScore(scores, 'create_expense', 0.4, 'expense_payment_phrase');
+  }
+
   if (containsAny(normalized, ['oldim', 'received', 'получил', 'получила', 'получили', 'tushdi', 'зарплата', 'зарплату', 'salary', 'maosh', 'oylik'])) {
     pushScore(scores, 'create_income', 0.34, 'income_direct_keyword');
   }
@@ -88,6 +92,19 @@ export function parseIntent(text: string, amount: AmountParseResult, date: DateP
 
   if (containsAny(normalized, ['qarz', 'debt', 'долг']) && containsAny(normalized, ['berdi', 'gave', 'lent', 'одолжил', 'oldim', 'borrowed'])) {
     pushScore(scores, 'create_debt', 0.44, 'debt_direct_phrase');
+  }
+
+  if (containsAny(normalized, ['qaytardi', 'qaytardim', 'вернул', 'вернула', 'returned', 'qaytib berdi']) && amount.amount) {
+    pushScore(scores, 'repay_debt', 0.52, 'repayment_direct_phrase');
+    pushScore(scores, 'create_income', 0.16, 'repayment_cashback_signal');
+  }
+
+  if (containsAny(normalized, ['uchun', 'для', 'for']) && containsAny(normalized, ["to'ladim", 'toladim', 'paid', 'оплатил', 'заплатил'])) {
+    pushScore(scores, 'create_expense', 0.46, 'paid_for_someone_phrase');
+  }
+
+  if (containsAny(normalized, ['dan', 'from']) && containsAny(normalized, ['oldim', 'received', 'получил']) && !containsAny(normalized, ['qarz', 'debt', 'долг'])) {
+    pushScore(scores, 'create_income', 0.42, 'received_from_someone_phrase');
   }
 
   if (containsAny(normalized, ['limit', 'лимит'])) {

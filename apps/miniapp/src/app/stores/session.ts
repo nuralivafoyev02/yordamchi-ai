@@ -1,7 +1,7 @@
 import { t, type AppLocale, type DashboardSnapshot, type SessionBootstrapResponse, type SessionExchangeResponse, type UserProfileSnapshot } from '@yordamchi/shared';
 import { defineStore } from 'pinia';
 import { ApiRequestError, apiClient } from '../../shared/api/client';
-import { waitForTelegramInitData } from '../../shared/lib/telegram';
+import { resolveTelegramTimeZone, waitForTelegramInitData } from '../../shared/lib/telegram';
 import { env } from '../../shared/config/env';
 
 interface SessionState {
@@ -51,7 +51,7 @@ export const useSessionStore = defineStore('session', {
 
         const response = await apiClient.post<SessionExchangeResponse>('/api/v1/session/exchange', {
           initData,
-          timezone: 'Asia/Tashkent',
+          timezone: resolveTelegramTimeZone(this.profile?.timezone ?? 'UTC'),
         });
 
         this.token = response.session.token;

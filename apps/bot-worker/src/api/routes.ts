@@ -1,5 +1,6 @@
 import { Hono, type MiddlewareHandler } from 'hono';
 import {
+  type ThemeKey,
   adminGrantPremiumSchema,
   createCategoryLimitSchema,
   createDebtPaymentSchema,
@@ -8,6 +9,7 @@ import {
   createTransactionSchema,
   parseCommandSchema,
   sessionExchangeSchema,
+  updateCategoryLimitSchema,
   updateNotificationSettingsSchema,
   updateProfileSchema,
 } from '@yordamchi/shared';
@@ -26,6 +28,10 @@ type ApiRoute = {
   Bindings: EnvBindings;
   Variables: ApiVariables;
 };
+
+function resolveSessionTimeZone(session: ApiVariables['session']) {
+  return session.timezone || 'UTC';
+}
 
 function assertPhoneRegistered(phoneNumber: string | null | undefined) {
   if (!phoneNumber) {
@@ -93,6 +99,7 @@ export function createApiRouter() {
       role: profile.role,
       telegram_user_id: profile.telegramUserId,
       theme: profile.themePreference,
+      timezone: profile.timezone,
     });
     const dashboard = await app.userService.buildDashboard(userId, profile.timezone);
 
@@ -109,7 +116,7 @@ export function createApiRouter() {
   api.get('/v1/bootstrap', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
-    const profile = await app.userService.getProfileSnapshot(session.app_user_id, 'Asia/Tashkent');
+    const profile = await app.userService.getProfileSnapshot(session.app_user_id, resolveSessionTimeZone(session));
     assertPhoneRegistered(profile.phoneNumber);
     const dashboard = await app.userService.buildDashboard(session.app_user_id, profile.timezone);
     return c.json({ dashboard, profile });
@@ -141,7 +148,7 @@ export function createApiRouter() {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createTransactionSchema.parse(await c.req.json());
-    await app.quotaService.assertMetricAvailable(session.app_user_id, 'finance_entry_create', 'Asia/Tashkent');
+    await app.quotaService.assertMetricAvailable(session.app_user_id, 'finance_entry_create', resolveSessionTimeZone(session));
     const created = await app.financeService.createTransaction(session.app_user_id, session.locale, payload);
     return c.json({ created });
   });
@@ -173,6 +180,31 @@ export function createApiRouter() {
     return c.json({ ok: true });
   });
 
+  api.get('/v1/limits', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    const month = c.req.query('month') ?? new Date().toISOString().slice(0, 7) + '-01';
+    const items = await app.financeService.listCategoryLimits(session.app_user_id, month);
+    return c.json({ items });
+  });
+
+  api.patch('/v1/limits/:limitId', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    const payload = updateCategoryLimitSchema.parse(await c.req.json());
+    await app.quotaService.assertPremiumFeature(session.app_user_id, 'finance.limits');
+    const updated = await app.financeService.updateCategoryLimit(session.app_user_id, c.req.param('limitId'), payload);
+    return c.json({ updated });
+  });
+
+  api.patch('/v1/limits/:limitId/archive', async (c) => {
+    const app = c.get('app');
+    const session = c.get('session');
+    await app.quotaService.assertPremiumFeature(session.app_user_id, 'finance.limits');
+    await app.financeService.archiveCategoryLimit(session.app_user_id, c.req.param('limitId'));
+    return c.json({ ok: true });
+  });
+
   api.get('/v1/finance/summary', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
@@ -193,6 +225,12 @@ export function createApiRouter() {
     const session = c.get('session');
     const payload = updateProfileSchema.parse(await c.req.json());
     await app.userService.updateProfile(session.app_user_id, payload);
+    if (payload.themePreference) {
+      session.theme = payload.themePreference as ThemeKey;
+    }
+    if (payload.timezone) {
+      session.timezone = payload.timezone;
+    }
     return c.json({ ok: true });
   });
 
@@ -220,7 +258,7 @@ export function createApiRouter() {
 
   api.get('/v1/admin/overview', async (c) => {
     const app = c.get('app');
-    return c.json(await app.adminService.overview());
+    return c.json(await app.adminService.overview(c.req.query('q') ?? ''));
   });
 
   api.post('/v1/admin/subscriptions/grant', async (c) => {

@@ -11,6 +11,7 @@ export interface AppSessionClaims {
   role: UserRole;
   telegram_user_id: number;
   theme: ThemeKey;
+  timezone: string;
 }
 
 export async function signAppSession(secret: string, claims: AppSessionClaims) {

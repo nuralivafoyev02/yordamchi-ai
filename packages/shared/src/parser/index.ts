@@ -62,7 +62,7 @@ function createTransaction(
 
 export function parseCommand(text: string, options: ParseCommandOptions = {}): ParsedCommand {
   const locale = options.locale ?? 'uz';
-  const timeZone = options.timeZone ?? 'Asia/Tashkent';
+  const timeZone = options.timeZone ?? 'UTC';
   const now = options.now ?? new Date();
   const defaultCurrency = options.defaultCurrency ?? 'UZS';
   const normalizedText = normalizeText(text);

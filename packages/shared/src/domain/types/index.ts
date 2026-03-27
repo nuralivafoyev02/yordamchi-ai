@@ -276,6 +276,21 @@ export interface DashboardSnapshot {
   upcomingPlans: DashboardPlan[];
 }
 
+export interface CategoryLimitSnapshot {
+  alertOnExceed: boolean;
+  category: CategorySnapshot;
+  currency: CurrencyCode;
+  id: string;
+  isActive: boolean;
+  limitAmount: number;
+  monthStart: string;
+  progressPercent: number;
+  remainingAmount: number;
+  spentAmount: number;
+  status: 'safe' | 'warning' | 'exceeded';
+  warningThresholdPercent: number;
+}
+
 export interface NotificationSettingsSnapshot {
   botNotificationsEnabled: boolean;
   debtRemindersEnabled: boolean;
@@ -296,6 +311,52 @@ export interface CategorySnapshot {
   slug: string;
 }
 
+export interface AdminOverviewMetric {
+  label: string;
+  tone: 'danger' | 'info' | 'premium' | 'success' | 'warning';
+  value: number;
+}
+
+export interface AdminDiagnosticLog {
+  context?: Record<string, unknown>;
+  createdAt: string;
+  event: string;
+  level: 'info' | 'warn' | 'error' | 'audit';
+  message: string;
+  userId?: string | null;
+}
+
+export interface AdminPremiumUserSummary {
+  currentPeriodEnd?: string | null;
+  displayName: string;
+  subscriptionStatus: SubscriptionStatus;
+  telegramUserId: number;
+  userId: string;
+  username?: string | null;
+}
+
+export interface AdminQuotaInsight {
+  limit: number | null;
+  metric: UsageMetric;
+  tier: SubscriptionTier;
+  totalUsed: number;
+  usersAtRisk: number;
+}
+
+export interface AdminUserAction {
+  action: string;
+  actorDisplayName: string;
+  actorTelegramUserId?: number | null;
+  actorUserId?: string | null;
+  createdAt: string;
+  entityId?: string | null;
+  entityType: string;
+  level: 'info' | 'warn' | 'error' | 'audit';
+  subjectDisplayName?: string | null;
+  subjectTelegramUserId?: number | null;
+  subjectUserId?: string | null;
+}
+
 export interface SessionBootstrapResponse {
   dashboard: DashboardSnapshot;
   profile: UserProfileSnapshot;
@@ -312,8 +373,14 @@ export interface AdminGrantPremiumInput {
 }
 
 export interface AdminOverview {
-  totalUsers: number;
   activePremiumUsers: number;
+  metrics: AdminOverviewMetric[];
   pendingReminders: number;
+  premiumUsers: AdminPremiumUserSummary[];
+  quotaInsights: AdminQuotaInsight[];
+  recentParserErrors: AdminDiagnosticLog[];
+  recentReminderFailures: AdminDiagnosticLog[];
+  recentUserActions: AdminUserAction[];
   recentErrors: number;
+  totalUsers: number;
 }

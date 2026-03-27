@@ -59,6 +59,8 @@ export function successMessage(locale: AppLocale, intent: ParsedCommand['intent'
       return t(locale, 'bot.debtCreated');
     case 'set_limit':
       return t(locale, 'bot.limitCreated');
+    case 'repay_debt':
+      return t(locale, 'bot.pendingSaved');
     default:
       return t(locale, 'common.confirm');
   }

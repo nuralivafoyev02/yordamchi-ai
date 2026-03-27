@@ -1,17 +1,26 @@
 <script setup lang="ts">
-import type { CurrencyCode, DashboardAccount, DashboardDebt, DashboardSnapshot, UserProfileSnapshot } from '@yordamchi/shared';
-import { computed, ref, watch } from 'vue';
+import type {
+  CategoryLimitSnapshot,
+  CategorySnapshot,
+  CurrencyCode,
+  DashboardAccount,
+  DashboardDebt,
+  DashboardSnapshot,
+  UserProfileSnapshot,
+} from '@yordamchi/shared';
+import { computed, reactive, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { useSessionStore } from '../../app/stores/session';
+import { useToast } from '../../composables/useToast';
+import DayEntryModal from '../../features/calendar-entry/DayEntryModal.vue';
 import BaseButton from '../../shared/components/BaseButton.vue';
 import BaseCard from '../../shared/components/BaseCard.vue';
 import BaseEmptyState from '../../shared/components/BaseEmptyState.vue';
 import BaseModal from '../../shared/components/BaseModal.vue';
 import StatusBadge from '../../shared/components/StatusBadge.vue';
-import { useToast } from '../../composables/useToast';
 import { apiClient } from '../../shared/api/client';
-import { useSessionStore } from '../../app/stores/session';
 import { useText } from '../../shared/composables/useText';
 import FinanceOverview from '../../widgets/finance-overview/FinanceOverview.vue';
-import DayEntryModal from '../../features/calendar-entry/DayEntryModal.vue';
 
 interface FinanceSummaryItem {
   direction: 'expense' | 'income';
@@ -23,15 +32,22 @@ interface FinanceSummaryItem {
 }
 
 type ActivityFilter = 'all' | 'expense' | 'income';
+type FinanceSection = 'debts' | 'history' | 'limits' | 'overview';
 
 const sessionStore = useSessionStore();
+const router = useRouter();
 const { locale, text } = useText();
 const toast = useToast();
 
 const activeFilter = ref<ActivityFilter>('all');
+const activeSection = ref<FinanceSection>('overview');
 const financeError = ref('');
 const financeItems = ref<FinanceSummaryItem[]>([]);
 const financeLoading = ref(false);
+const limitItems = ref<CategoryLimitSnapshot[]>([]);
+const limitsLoading = ref(false);
+const limitsError = ref('');
+const categoryOptions = ref<CategorySnapshot[]>([]);
 const modalOpen = ref(false);
 const modalMode = ref<'debt' | 'expense' | 'income' | 'plan'>('expense');
 const monthStart = ref(startOfMonth(new Date()));
@@ -40,6 +56,16 @@ const paymentError = ref('');
 const paymentNote = ref('');
 const selectedAccount = ref<DashboardAccount | null>(null);
 const selectedDebt = ref<DashboardDebt | null>(null);
+const limitModalOpen = ref(false);
+const limitModalBusy = ref(false);
+const limitArchiveCandidateId = ref<string | null>(null);
+const editingLimitId = ref<string | null>(null);
+const limitForm = reactive({
+  amount: '',
+  categoryId: '',
+  currency: 'UZS' as CurrencyCode,
+  warningThresholdPercent: 80,
+});
 
 const emptyDashboard: DashboardSnapshot = {
   accounts: [],
@@ -51,6 +77,7 @@ const emptyDashboard: DashboardSnapshot = {
 
 const dashboard = computed(() => sessionStore.dashboard ?? emptyDashboard);
 const profile = computed<UserProfileSnapshot | null>(() => sessionStore.profile);
+const isPremium = computed(() => Boolean(profile.value?.subscription.isPremium));
 const selectedMonthSummary = computed<Record<string, { expense: number; income: number }>>(() => {
   return financeItems.value.reduce<Record<string, { expense: number; income: number }>>((accumulator, item) => {
     const current = accumulator[item.original_currency] ?? { expense: 0, income: 0 };
@@ -78,11 +105,21 @@ const entryDraftDate = computed(() => {
   const currentMonth = startOfMonth(new Date());
   return monthStart.value === currentMonth ? todayIso : monthStart.value;
 });
+const expenseCategories = computed(() => categoryOptions.value.filter((item) => item.kind !== 'income'));
+const limitAlertsCount = computed(() => limitItems.value.filter((item) => item.status !== 'safe' && item.isActive).length);
+const exceededLimitCount = computed(() => limitItems.value.filter((item) => item.status === 'exceeded' && item.isActive).length);
 
 const activityFilters = computed(() => [
   { label: text('finance.filterAll'), value: 'all' as const },
   { label: text('finance.filterIncome'), value: 'income' as const },
   { label: text('finance.filterExpense'), value: 'expense' as const },
+]);
+
+const financeSections = computed(() => [
+  { label: text('finance.monthlyOverview'), value: 'overview' as const },
+  { label: text('finance.activityFeed'), value: 'history' as const },
+  { label: text('finance.debtBook'), value: 'debts' as const },
+  { label: text('finance.limits'), value: 'limits' as const },
 ]);
 
 const insightCards = computed(() => [
@@ -97,8 +134,13 @@ const insightCards = computed(() => [
     value: formatAmount(primaryMonthSummary.value.expense, primaryCurrency.value),
   },
   {
+    label: text('finance.limitFlagged'),
+    tone: limitAlertsCount.value ? 'danger' as const : 'info' as const,
+    value: String(limitAlertsCount.value),
+  },
+  {
     label: text('finance.openDebtCount'),
-    tone: dashboard.value.openDebts.length ? 'danger' as const : 'info' as const,
+    tone: dashboard.value.openDebts.length ? 'warning' as const : 'info' as const,
     value: String(dashboard.value.openDebts.length),
   },
 ]);
@@ -158,6 +200,8 @@ const paymentAccount = computed<DashboardAccount | null>(() => {
     ?? null;
 });
 
+const editingLimit = computed(() => limitItems.value.find((item) => item.id === editingLimitId.value) ?? null);
+
 function startOfMonth(date: Date) {
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;
@@ -198,24 +242,15 @@ function dueTone(debt: DashboardDebt) {
   const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
   const diffDays = Math.round((startDue - startToday) / 86400000);
 
-  if (diffDays < 0) {
-    return 'danger' as const;
-  }
-
-  if (diffDays === 0) {
-    return 'warning' as const;
-  }
-
-  if (diffDays <= 3) {
-    return 'info' as const;
-  }
-
+  if (diffDays < 0) return 'danger' as const;
+  if (diffDays === 0) return 'warning' as const;
+  if (diffDays <= 3) return 'info' as const;
   return 'success' as const;
 }
 
 function dueLabel(debt: DashboardDebt) {
   if (!debt.due_at) {
-    return formatCalendarDate(new Date().toISOString());
+    return text('finance.debtBookHint');
   }
 
   const due = new Date(debt.due_at);
@@ -224,23 +259,42 @@ function dueLabel(debt: DashboardDebt) {
   const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
   const diffDays = Math.round((startDue - startToday) / 86400000);
 
-  if (diffDays < 0) {
-    return text('finance.overdue');
-  }
-
-  if (diffDays === 0) {
-    return text('finance.dueToday');
-  }
-
-  if (diffDays <= 3) {
-    return text('finance.dueSoon');
-  }
-
+  if (diffDays < 0) return text('finance.overdue');
+  if (diffDays === 0) return text('finance.dueToday');
+  if (diffDays <= 3) return text('finance.dueSoon');
   return formatCalendarDate(debt.due_at);
 }
 
 function debtDirectionLabel(debt: DashboardDebt) {
   return debt.direction === 'borrowed' ? text('finance.borrowed') : text('finance.lent');
+}
+
+function limitTone(limit: CategoryLimitSnapshot) {
+  switch (limit.status) {
+    case 'exceeded':
+      return 'danger' as const;
+    case 'warning':
+      return 'warning' as const;
+    default:
+      return 'success' as const;
+  }
+}
+
+function limitStatusLabel(limit: CategoryLimitSnapshot) {
+  switch (limit.status) {
+    case 'exceeded':
+      return text('finance.limitExceeded');
+    case 'warning':
+      return text('finance.limitWarning');
+    default:
+      return text('finance.limitSafe');
+  }
+}
+
+function resolveCategoryName(category: CategorySnapshot) {
+  const key = `categories.${category.slug}`;
+  const localized = text(key);
+  return localized === key ? category.name : localized;
 }
 
 function openQuickAction(mode: 'debt' | 'expense' | 'income' | 'plan') {
@@ -253,6 +307,15 @@ function openDebtPayment(debt: DashboardDebt) {
   paymentAmount.value = String(debt.principal_amount);
   paymentNote.value = '';
   paymentError.value = '';
+}
+
+async function ensureCategoriesLoaded() {
+  if (categoryOptions.value.length) {
+    return;
+  }
+
+  const response = await apiClient.get<{ categories: CategorySnapshot[] }>('/api/v1/categories');
+  categoryOptions.value = (response.categories ?? []).filter((item) => item.kind !== 'income');
 }
 
 async function loadFinanceSummary() {
@@ -269,6 +332,130 @@ async function loadFinanceSummary() {
     financeError.value = error instanceof Error ? error.message : text('errors.generic');
   } finally {
     financeLoading.value = false;
+  }
+}
+
+async function loadLimits() {
+  if (!sessionStore.token || !isPremium.value) {
+    limitItems.value = [];
+    return;
+  }
+
+  try {
+    limitsError.value = '';
+    limitsLoading.value = true;
+    const response = await apiClient.get<{ items: CategoryLimitSnapshot[] }>(`/api/v1/limits?month=${monthStart.value}`);
+    limitItems.value = response.items ?? [];
+  } catch (error) {
+    limitsError.value = error instanceof Error ? error.message : text('errors.generic');
+  } finally {
+    limitsLoading.value = false;
+  }
+}
+
+function openLimitModal(limit?: CategoryLimitSnapshot) {
+  if (!isPremium.value) {
+    toast.show({
+      message: text('premium.cta'),
+      variant: 'warning',
+    });
+    void router.push('/profile');
+    return;
+  }
+
+  void ensureCategoriesLoaded()
+    .then(() => {
+      editingLimitId.value = limit?.id ?? null;
+      limitArchiveCandidateId.value = null;
+      limitForm.amount = limit ? String(limit.limitAmount) : '';
+      limitForm.categoryId = limit?.category.id ?? expenseCategories.value[0]?.id ?? '';
+      limitForm.currency = limit?.currency ?? profile.value?.baseCurrency ?? 'UZS';
+      limitForm.warningThresholdPercent = Math.round(limit?.warningThresholdPercent ?? 80);
+      limitModalOpen.value = true;
+    })
+    .catch((error) => {
+      toast.show({
+        message: error instanceof Error ? error.message : text('errors.generic'),
+        variant: 'error',
+      });
+    });
+}
+
+async function saveLimit() {
+  try {
+    const amount = Number(limitForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error(text('finance.invalidAmount'));
+    }
+
+    if (!limitForm.categoryId) {
+      throw new Error(text('finance.limitCategory'));
+    }
+
+    limitModalBusy.value = true;
+
+    if (editingLimitId.value) {
+      await apiClient.patch(`/api/v1/limits/${editingLimitId.value}`, {
+        amount,
+        categoryId: limitForm.categoryId,
+        currency: limitForm.currency,
+        monthStart: monthStart.value,
+        warningThresholdPercent: limitForm.warningThresholdPercent,
+      });
+    } else {
+      await apiClient.post('/api/v1/limits', {
+        amount,
+        categoryId: limitForm.categoryId,
+        currency: limitForm.currency,
+        monthStart: monthStart.value,
+        warningThresholdPercent: limitForm.warningThresholdPercent,
+      });
+    }
+
+    await loadLimits();
+    limitModalOpen.value = false;
+    toast.show({
+      message: text('bot.limitCreated'),
+      variant: 'success',
+    });
+  } catch (error) {
+    toast.show({
+      message: error instanceof Error ? error.message : text('errors.generic'),
+      variant: 'error',
+    });
+  } finally {
+    limitModalBusy.value = false;
+  }
+}
+
+async function archiveLimit() {
+  if (!editingLimitId.value) {
+    return;
+  }
+
+  if (limitArchiveCandidateId.value !== editingLimitId.value) {
+    limitArchiveCandidateId.value = editingLimitId.value;
+    return;
+  }
+
+  try {
+    limitModalBusy.value = true;
+    await apiClient.patch(`/api/v1/limits/${editingLimitId.value}/archive`, {});
+    await loadLimits();
+    limitModalOpen.value = false;
+    editingLimitId.value = null;
+    limitArchiveCandidateId.value = null;
+    toast.show({
+      message: text('common.saved'),
+      variant: 'success',
+    });
+  } catch (error) {
+    toast.show({
+      message: error instanceof Error ? error.message : text('errors.generic'),
+      variant: 'error',
+    });
+  } finally {
+    limitModalBusy.value = false;
   }
 }
 
@@ -308,14 +495,14 @@ async function submitDebtPayment() {
 }
 
 async function handleEntrySaved() {
-  await Promise.all([sessionStore.refreshBootstrap(), loadFinanceSummary()]);
+  await Promise.all([sessionStore.refreshBootstrap(), loadFinanceSummary(), loadLimits()]);
 }
 
 watch(
-  () => [sessionStore.bootstrapLoaded, sessionStore.token, monthStart.value] as const,
+  () => [sessionStore.bootstrapLoaded, sessionStore.token, monthStart.value, isPremium.value] as const,
   async ([loaded, token]) => {
     if (loaded && token) {
-      await loadFinanceSummary();
+      await Promise.all([loadFinanceSummary(), loadLimits()]);
     }
   },
   { immediate: true },
@@ -340,25 +527,93 @@ watch(
       </div>
     </header>
 
-    <FinanceOverview
-      :accounts="dashboard.accounts"
-      :base-currency="profile?.baseCurrency"
-      :month-summary="selectedMonthSummary"
-      @action="openQuickAction"
-      @select-account="selectedAccount = $event"
-    />
-
-    <div class="insight-grid">
-      <BaseCard v-for="card in insightCards" :key="card.label" class="insight-card">
-        <span>{{ card.label }}</span>
-        <strong>{{ card.value }}</strong>
-        <StatusBadge :tone="card.tone">{{ card.label }}</StatusBadge>
-      </BaseCard>
+    <div class="section-tabs">
+      <button
+        v-for="item in financeSections"
+        :key="item.value"
+        :class="['section-tabs__item', { 'section-tabs__item--active': activeSection === item.value }]"
+        type="button"
+        @click="activeSection = item.value"
+      >
+        {{ item.label }}
+      </button>
     </div>
+
+    <template v-if="activeSection === 'overview'">
+      <FinanceOverview
+        :accounts="dashboard.accounts"
+        :base-currency="profile?.baseCurrency"
+        :month-summary="selectedMonthSummary"
+        @action="openQuickAction"
+        @select-account="selectedAccount = $event"
+      />
+
+      <div class="insight-grid">
+        <BaseCard v-for="card in insightCards" :key="card.label" class="insight-card">
+          <span>{{ card.label }}</span>
+          <strong>{{ card.value }}</strong>
+          <StatusBadge :tone="card.tone">{{ card.label }}</StatusBadge>
+        </BaseCard>
+      </div>
+    </template>
 
     <p v-if="financeError" class="page__error">{{ financeError }}</p>
 
-    <BaseCard class="panel-card">
+    <BaseCard v-if="activeSection === 'limits'" class="panel-card">
+      <div class="panel-card__header">
+        <div>
+          <p>{{ text('finance.limitsHint') }}</p>
+          <h2>{{ text('finance.limits') }}</h2>
+        </div>
+        <div class="panel-card__actions">
+          <StatusBadge :tone="exceededLimitCount ? 'danger' : limitAlertsCount ? 'warning' : 'info'">
+            {{ limitItems.length }}
+          </StatusBadge>
+          <BaseButton :block="false" variant="secondary" @click="openLimitModal()">{{ text('finance.limitCreate') }}</BaseButton>
+        </div>
+      </div>
+
+      <div v-if="!isPremium" class="limit-lock">
+        <StatusBadge tone="premium">{{ text('common.premium') }}</StatusBadge>
+        <p>{{ text('premium.lockedBody') }}</p>
+        <BaseButton :block="false" @click="router.push('/profile')">{{ text('premium.cta') }}</BaseButton>
+      </div>
+
+      <p v-else-if="limitsError" class="page__error">{{ limitsError }}</p>
+      <div v-else-if="limitsLoading" class="panel-card__placeholder">{{ text('common.loading') }}</div>
+
+      <div v-else-if="limitItems.length" class="limit-list">
+        <article v-for="limit in limitItems" :key="limit.id" class="limit-item">
+          <div class="limit-item__head">
+            <div>
+              <strong>{{ resolveCategoryName(limit.category) }}</strong>
+              <small>{{ formatAmount(limit.limitAmount, limit.currency) }}</small>
+            </div>
+            <div class="limit-item__badges">
+              <StatusBadge :tone="limitTone(limit)">{{ limitStatusLabel(limit) }}</StatusBadge>
+              <button class="limit-item__edit" type="button" @click="openLimitModal(limit)">{{ text('common.edit') }}</button>
+            </div>
+          </div>
+
+          <div class="limit-item__progress">
+            <i :class="[`limit-item__progress-bar--${limit.status}`]" :style="{ width: `${Math.min(limit.progressPercent, 100)}%` }" />
+          </div>
+
+          <div class="limit-item__meta">
+            <span>{{ text('finance.limitSpent') }} · {{ formatAmount(limit.spentAmount, limit.currency) }}</span>
+            <span>{{ text('finance.limitRemaining') }} · {{ formatAmount(limit.remainingAmount, limit.currency) }}</span>
+          </div>
+
+          <div class="limit-item__footer">
+            <small>{{ text('finance.limitThreshold') }} · {{ Math.round(limit.warningThresholdPercent) }}%</small>
+            <small>{{ monthLabel }}</small>
+          </div>
+        </article>
+      </div>
+      <BaseEmptyState v-else :description="text('finance.limitNoItems')" :title="text('finance.limits')" />
+    </BaseCard>
+
+    <BaseCard v-if="activeSection === 'history'" class="panel-card">
       <div class="panel-card__header">
         <div>
           <p>{{ text('finance.activityFeedHint') }}</p>
@@ -409,7 +664,7 @@ watch(
       <BaseEmptyState v-else :description="text('finance.noActivityForMonth')" :title="text('finance.activityFeed')" />
     </BaseCard>
 
-    <BaseCard class="panel-card">
+    <BaseCard v-if="activeSection === 'debts'" class="panel-card">
       <div class="panel-card__header">
         <div>
           <p>{{ text('finance.debtBookHint') }}</p>
@@ -483,7 +738,7 @@ watch(
     </BaseModal>
 
     <BaseModal :open="Boolean(selectedDebt)" :title="text('finance.recordPayment')" @close="selectedDebt = null">
-      <template v-if="selectedDebt">
+      <div v-if="selectedDebt">
         <div class="sheet-hero">
           <small>{{ debtDirectionLabel(selectedDebt) }}</small>
           <strong>{{ selectedDebt.counterparty_name }}</strong>
@@ -506,8 +761,64 @@ watch(
         </div>
 
         <p v-if="paymentError" class="page__error">{{ paymentError }}</p>
+      </div>
 
+      <template #footer>
         <BaseButton block @click="submitDebtPayment">{{ text('finance.submitPayment') }}</BaseButton>
+      </template>
+    </BaseModal>
+
+    <BaseModal :open="limitModalOpen" :title="editingLimit ? text('finance.limitEdit') : text('finance.limitCreate')" @close="limitModalOpen = false">
+      <div class="sheet-hero sheet-hero--limit">
+        <small>{{ text('finance.limitsHint') }}</small>
+        <strong>{{ monthLabel }}</strong>
+        <h3>{{ editingLimit ? resolveCategoryName(editingLimit.category) : text('finance.limits') }}</h3>
+      </div>
+
+      <label class="sheet-field">
+        <span>{{ text('finance.amountLabel') }}</span>
+        <input v-model="limitForm.amount" inputmode="decimal" />
+      </label>
+
+      <div class="sheet-group">
+        <span class="sheet-group__label">{{ text('finance.limitCategory') }}</span>
+        <div class="limit-category-row">
+          <button
+            v-for="category in expenseCategories"
+            :key="category.id"
+            :class="['choice-chip', { 'choice-chip--active': limitForm.categoryId === category.id }]"
+            type="button"
+            @click="limitForm.categoryId = category.id"
+          >
+            <span>{{ category.icon || '•' }}</span>
+            <strong>{{ resolveCategoryName(category) }}</strong>
+          </button>
+        </div>
+      </div>
+
+      <div class="sheet-grid">
+        <label class="sheet-field">
+          <span>{{ text('common.account') }}</span>
+          <select v-model="limitForm.currency">
+            <option value="UZS">UZS</option>
+            <option value="USD">USD</option>
+          </select>
+        </label>
+
+        <label class="sheet-field">
+          <span>{{ text('finance.limitThreshold') }}</span>
+          <input v-model.number="limitForm.warningThresholdPercent" inputmode="numeric" max="100" min="1" type="number" />
+        </label>
+      </div>
+
+      <template #footer>
+        <div class="limit-footer">
+          <BaseButton variant="ghost" @click="limitModalOpen = false">{{ text('common.cancel') }}</BaseButton>
+          <BaseButton v-if="editingLimit" variant="secondary" @click="archiveLimit">
+            {{ limitArchiveCandidateId === editingLimitId ? text('common.confirm') : text('finance.limitArchive') }}
+          </BaseButton>
+          <BaseButton @click="saveLimit">{{ limitModalBusy ? text('common.loading') : text('finance.limitSave') }}</BaseButton>
+        </div>
       </template>
     </BaseModal>
   </div>
@@ -527,16 +838,16 @@ watch(
 }
 
 .page__header p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .page__header h1 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
@@ -549,8 +860,8 @@ watch(
 
 .month-switcher {
   align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
   display: flex;
   gap: 8px;
@@ -560,9 +871,9 @@ watch(
 .month-switcher button {
   align-items: center;
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  color: var(--tg-text);
+  color: var(--text);
   cursor: pointer;
   display: inline-flex;
   font-size: 16px;
@@ -580,41 +891,75 @@ watch(
 
 .page__plus {
   align-items: center;
-  background: var(--tg-button);
+  background: var(--hero-gradient);
   border: none;
   border-radius: 999px;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--tg-button) 26%, transparent);
-  color: var(--tg-button-text);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--hero-glow) 52%, transparent);
+  color: var(--accent-contrast);
   cursor: pointer;
   display: inline-flex;
   font-size: 20px;
-  height: 36px;
+  height: 40px;
   justify-content: center;
-  width: 36px;
+  width: 40px;
+}
+
+.section-tabs {
+  background: color-mix(in srgb, var(--surface) 96%, var(--bg) 4%);
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 6px;
+}
+
+.section-tabs__item {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.section-tabs__item--active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: var(--accent);
 }
 
 .insight-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .insight-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   gap: 10px;
 }
 
 .insight-card span {
   color: var(--text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .insight-card strong {
   font-size: var(--text-body);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
 }
 
 .panel-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    var(--surface);
   display: grid;
   gap: 12px;
 }
@@ -627,23 +972,141 @@ watch(
 }
 
 .panel-card__header p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .panel-card__header h2 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
+.panel-card__actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .panel-card__placeholder {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-body);
-  text-align: center;
+}
+
+.limit-lock {
+  align-items: start;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.limit-lock p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.limit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.limit-item {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.limit-item__head,
+.debt-item__head,
+.panel-card__header {
+  align-items: start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.limit-item__head strong,
+.debt-item__head strong {
+  font-size: var(--text-body);
+  margin: 0;
+}
+
+.limit-item__head small,
+.limit-item__meta span,
+.limit-item__footer small,
+.activity-group__head small,
+.activity-item__copy small,
+.debt-item__footer small,
+.payment-account small,
+.sheet-field span,
+.sheet-group__label,
+.sheet-hero small,
+.sheet-stat span {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.limit-item__badges,
+.debt-item__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: end;
+}
+
+.limit-item__edit {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
+  padding: 0;
+}
+
+.limit-item__progress,
+.account-row__progress,
+.flow-card__progress {
+  background: color-mix(in srgb, var(--tg-hint) 14%, transparent);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.limit-item__progress i,
+.account-row__progress i,
+.flow-card__progress i {
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.limit-item__progress-bar--safe {
+  background: var(--success);
+}
+
+.limit-item__progress-bar--warning {
+  background: var(--warning);
+}
+
+.limit-item__progress-bar--exceeded {
+  background: var(--danger);
+}
+
+.limit-item__meta,
+.limit-item__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
 }
 
 .filter-row {
@@ -654,19 +1117,20 @@ watch(
 
 .filter-chip {
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  color: var(--tg-hint);
+  color: var(--text);
   cursor: pointer;
-  font-size: var(--text-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-interactive);
   min-height: 30px;
   padding: 0 12px;
 }
 
 .filter-chip--active {
-  background: rgba(var(--accent-rgb), 0.16);
-  border-color: rgba(var(--accent-rgb), 0.28);
-  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent);
 }
 
 .activity-group-list,
@@ -677,18 +1141,13 @@ watch(
 
 .activity-group {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .activity-group__head {
   align-items: center;
   display: flex;
   justify-content: space-between;
-}
-
-.activity-group__head small {
-  color: var(--tg-hint);
-  font-size: var(--text-xs);
 }
 
 .activity-item {
@@ -698,48 +1157,41 @@ watch(
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   min-height: 52px;
-  padding: 10px 0;
-}
-
-.activity-group .activity-item:first-of-type {
-  border-top: none;
+  padding-top: 8px;
 }
 
 .activity-item__icon {
   align-items: center;
-  background: rgba(255, 177, 26, 0.12);
-  border-radius: 999px;
+  background: var(--warning-soft);
+  border-radius: 14px;
   color: var(--warning);
   display: inline-flex;
-  font-size: 16px;
-  font-weight: var(--weight-interactive);
+  font-size: var(--text-body);
   height: 36px;
   justify-content: center;
   width: 36px;
 }
 
 .activity-item__icon--income {
-  background: rgba(54, 209, 106, 0.12);
+  background: var(--success-soft);
   color: var(--success);
 }
 
 .activity-item__copy {
   display: grid;
   gap: 2px;
-  min-width: 0;
 }
 
-.activity-item__copy strong {
+.activity-item__copy strong,
+.debt-item__copy strong,
+.sheet-hero strong,
+.sheet-stat strong {
   font-size: var(--text-body);
   font-weight: var(--weight-interactive);
 }
 
-.activity-item__copy small {
-  color: var(--tg-hint);
-  font-size: var(--text-xs);
-}
-
 .activity-item__amount {
+  color: var(--warning);
   font-size: var(--text-body);
   font-weight: var(--weight-interactive);
 }
@@ -749,20 +1201,12 @@ watch(
 }
 
 .debt-item {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
   gap: 10px;
-  padding: 12px 14px;
-}
-
-.debt-item__head,
-.debt-item__footer {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
+  padding: 12px;
 }
 
 .debt-item__copy {
@@ -770,116 +1214,129 @@ watch(
   gap: 6px;
 }
 
-.debt-item__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .debt-item__amount {
   font-size: var(--text-body);
-  font-weight: var(--weight-interactive);
+  text-align: right;
 }
 
-.debt-item__footer small,
-.sheet-hero small,
-.payment-account small {
-  color: var(--tg-hint);
-  font-size: var(--text-xs);
+.debt-item__footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
 }
 
 .sheet-hero {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   display: grid;
   gap: 4px;
-  margin-bottom: 10px;
+  padding: 12px;
 }
 
 .sheet-hero h3 {
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: var(--weight-title);
   margin: 0;
 }
 
+.sheet-hero--limit {
+  gap: 2px;
+}
+
 .sheet-grid {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sheet-stat {
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
   gap: 4px;
-  padding: 10px 12px;
+  padding: 12px;
 }
 
-.sheet-stat span,
-.sheet-field span {
-  color: var(--tg-hint);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-interactive);
-}
-
-.sheet-field {
+.sheet-field,
+.sheet-group {
   display: grid;
   gap: 6px;
 }
 
-.sheet-field input {
+.sheet-field input,
+.sheet-field select {
   background: var(--surface-soft);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  color: var(--tg-text);
-  min-height: 40px;
-  padding: 0 14px;
+  color: var(--text);
+  min-height: var(--field-height);
+  padding: 0 12px;
 }
 
 .payment-account {
-  background: rgba(var(--accent-rgb), 0.12);
-  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  background: var(--surface-soft);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
   gap: 4px;
   padding: 10px 12px;
 }
 
-.page__error {
-  color: var(--danger);
-  font-size: var(--text-xs);
-  margin: 0;
+.limit-category-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
-@media (max-width: 720px) {
-  .page__header,
-  .debt-item__head,
-  .debt-item__footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.choice-chip {
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
 
-  .page__actions,
-  .month-switcher {
-    width: 100%;
-  }
+.choice-chip--active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent);
+}
 
-  .month-switcher strong {
-    min-width: 0;
-    flex: 1;
-  }
+.limit-footer {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 
+@media (max-width: 560px) {
   .insight-grid,
-  .sheet-grid {
+  .sheet-grid,
+  .limit-footer {
     grid-template-columns: 1fr;
   }
 
-  .activity-item {
-    grid-template-columns: auto 1fr;
+  .section-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .activity-item__amount {
-    grid-column: 2;
+  .page__header,
+  .debt-item__footer {
+    grid-template-columns: 1fr;
+  }
+
+  .page__actions,
+  .panel-card__actions {
+    justify-items: stretch;
   }
 }
 </style>

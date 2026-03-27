@@ -1,20 +1,69 @@
 <script setup lang="ts">
-import { useText } from '../../shared/composables/useText';
+import type { ThemeKey } from '@yordamchi/shared';
 import BaseButton from '../../shared/components/BaseButton.vue';
 import BaseCard from '../../shared/components/BaseCard.vue';
 import StatusBadge from '../../shared/components/StatusBadge.vue';
+import { useText } from '../../shared/composables/useText';
 
-defineProps<{
+const props = defineProps<{
   isPremium: boolean;
-  theme: 'blue' | 'gold';
+  theme: ThemeKey;
 }>();
 
 const emit = defineEmits<{
-  select: [theme: 'blue' | 'gold'];
+  select: [theme: ThemeKey];
   upgrade: [];
 }>();
 
 const { text } = useText();
+
+const premiumThemes = new Set<ThemeKey>(['gold', 'mint']);
+
+const options: Array<{
+  descriptionKey: string;
+  isPremium: boolean;
+  key: ThemeKey;
+  labelKey: string;
+  swatchClass: string;
+}> = [
+  {
+    descriptionKey: 'profile.neutralAccent',
+    isPremium: false,
+    key: 'blue',
+    labelKey: 'profile.classicStyle',
+    swatchClass: 'theme-option__swatch--classic',
+  },
+  {
+    descriptionKey: 'profile.graphiteAccent',
+    isPremium: false,
+    key: 'graphite',
+    labelKey: 'profile.graphiteTheme',
+    swatchClass: 'theme-option__swatch--graphite',
+  },
+  {
+    descriptionKey: 'profile.goldAccent',
+    isPremium: true,
+    key: 'gold',
+    labelKey: 'premium.goldTheme',
+    swatchClass: 'theme-option__swatch--gold',
+  },
+  {
+    descriptionKey: 'profile.mintAccent',
+    isPremium: true,
+    key: 'mint',
+    labelKey: 'profile.mintTheme',
+    swatchClass: 'theme-option__swatch--mint',
+  },
+];
+
+function handleSelect(theme: ThemeKey) {
+  if (premiumThemes.has(theme) && !props.isPremium) {
+    emit('upgrade');
+    return;
+  }
+
+  emit('select', theme);
+}
 </script>
 
 <template>
@@ -27,23 +76,21 @@ const { text } = useText();
     </div>
 
     <div class="theme-grid">
-      <button :class="['theme-option', { 'theme-option--active': theme === 'blue' }]" type="button" @click="emit('select', 'blue')">
-        <i class="theme-option__swatch theme-option__swatch--classic" />
-        <span>{{ text('profile.classicStyle') }}</span>
-        <small>{{ text('profile.neutralAccent') }}</small>
-      </button>
       <button
-        :class="['theme-option', 'theme-option--gold', { 'theme-option--active': theme === 'gold' }]"
+        v-for="option in options"
+        :key="option.key"
+        :class="['theme-option', { 'theme-option--active': props.theme === option.key }]"
         type="button"
-        @click="emit('select', 'gold')"
+        @click="handleSelect(option.key)"
       >
-        <i class="theme-option__swatch theme-option__swatch--gold" />
-        <span>{{ text('premium.goldTheme') }}</span>
-        <small>{{ text('profile.goldAccent') }}</small>
-        <StatusBadge v-if="!isPremium" tone="premium">{{ text('common.premium') }}</StatusBadge>
+        <i :class="['theme-option__swatch', option.swatchClass]" />
+        <span>{{ text(option.labelKey) }}</span>
+        <small>{{ text(option.descriptionKey) }}</small>
+        <StatusBadge v-if="option.isPremium && !props.isPremium" tone="premium">{{ text('common.premium') }}</StatusBadge>
       </button>
     </div>
-    <BaseButton v-if="!isPremium" block variant="secondary" @click="emit('upgrade')">{{ text('premium.cta') }}</BaseButton>
+
+    <BaseButton v-if="!props.isPremium" block variant="secondary" @click="emit('upgrade')">{{ text('premium.cta') }}</BaseButton>
   </BaseCard>
 </template>
 
@@ -54,43 +101,41 @@ const { text } = useText();
 }
 
 .theme-card__head p {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-section);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .theme-card__head h3 {
   font-size: var(--text-lg);
-  font-weight: var(--weight-interactive);
+  font-weight: var(--weight-semibold);
   margin: 0;
 }
 
 .theme-grid {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .theme-option {
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)), var(--surface-soft);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
   gap: 4px;
-  min-height: 84px;
-  padding: 10px;
+  min-height: 98px;
+  padding: 12px;
   text-align: left;
 }
 
-.theme-option--gold {
-  border-color: rgba(240, 193, 82, 0.24);
-}
-
 .theme-option--active {
-  border-color: rgba(240, 193, 82, 0.4);
-  box-shadow: inset 0 0 0 1px rgba(240, 193, 82, 0.3);
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .theme-option > span {
@@ -99,7 +144,7 @@ const { text } = useText();
 }
 
 .theme-option > small {
-  color: var(--tg-hint);
+  color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
@@ -111,18 +156,22 @@ const { text } = useText();
 }
 
 .theme-option__swatch--classic {
-  background: linear-gradient(135deg, #d8dde7, #7d879a);
+  background: linear-gradient(135deg, #ff4d6d, #ff8a5b);
+}
+
+.theme-option__swatch--graphite {
+  background: linear-gradient(135deg, #6f7892, #a5adc4);
 }
 
 .theme-option__swatch--gold {
-  background: linear-gradient(135deg, #ffd56e, #f09b5a);
+  background: linear-gradient(135deg, #f5c84c, #ff8a5b);
+}
+
+.theme-option__swatch--mint {
+  background: linear-gradient(135deg, #18d97a, #35f0a1);
 }
 
 .theme-card :deep(.badge) {
   justify-self: start;
-}
-
-.theme-card :deep(.button) {
-  min-height: 38px;
 }
 </style>
