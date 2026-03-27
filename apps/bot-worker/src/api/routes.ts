@@ -53,7 +53,7 @@ async function adminOnly(
 export function createApiRouter() {
   const api = new Hono<{ Bindings: EnvBindings; Variables: ApiVariables }>();
 
-  api.post('/api/v1/session/exchange', async (c) => {
+  api.post('/v1/session/exchange', async (c) => {
     const app = c.get('app');
     const body = sessionExchangeSchema.parse(await c.req.json());
     const verified = await verifyTelegramInitData(body.initData, c.env.TELEGRAM_BOT_TOKEN);
@@ -75,10 +75,10 @@ export function createApiRouter() {
     });
   });
 
-  api.use('/api/v1/*', bearerAuth);
-  api.use('/api/v1/admin/*', adminOnly);
+  api.use('/v1/*', bearerAuth);
+  api.use('/v1/admin/*', adminOnly);
 
-  api.get('/api/v1/bootstrap', async (c) => {
+  api.get('/v1/bootstrap', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const profile = await app.userService.getProfileSnapshot(session.app_user_id, 'Asia/Tashkent');
@@ -86,7 +86,7 @@ export function createApiRouter() {
     return c.json({ dashboard, profile });
   });
 
-  api.post('/api/v1/intents/parse', async (c) => {
+  api.post('/v1/intents/parse', async (c) => {
     const app = c.get('app');
     const payload = parseCommandSchema.parse(await c.req.json());
     const parsed = app.nlu.parse(payload.text, {
@@ -99,7 +99,7 @@ export function createApiRouter() {
     return c.json(parsed);
   });
 
-  api.post('/api/v1/plans', async (c) => {
+  api.post('/v1/plans', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createPlanSchema.parse(await c.req.json());
@@ -108,7 +108,7 @@ export function createApiRouter() {
     return c.json({ created });
   });
 
-  api.post('/api/v1/transactions', async (c) => {
+  api.post('/v1/transactions', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createTransactionSchema.parse(await c.req.json());
@@ -117,7 +117,7 @@ export function createApiRouter() {
     return c.json({ created });
   });
 
-  api.post('/api/v1/debts', async (c) => {
+  api.post('/v1/debts', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createDebtSchema.parse(await c.req.json());
@@ -126,7 +126,7 @@ export function createApiRouter() {
     return c.json({ created });
   });
 
-  api.post('/api/v1/debts/payments', async (c) => {
+  api.post('/v1/debts/payments', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createDebtPaymentSchema.parse(await c.req.json());
@@ -135,7 +135,7 @@ export function createApiRouter() {
     return c.json({ ok: true });
   });
 
-  api.post('/api/v1/limits', async (c) => {
+  api.post('/v1/limits', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = createCategoryLimitSchema.parse(await c.req.json());
@@ -144,7 +144,7 @@ export function createApiRouter() {
     return c.json({ ok: true });
   });
 
-  api.get('/api/v1/finance/summary', async (c) => {
+  api.get('/v1/finance/summary', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const month = c.req.query('month') ?? new Date().toISOString().slice(0, 7) + '-01';
@@ -152,14 +152,14 @@ export function createApiRouter() {
     return c.json({ items });
   });
 
-  api.get('/api/v1/calendar', async (c) => {
+  api.get('/v1/calendar', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const month = c.req.query('month') ?? new Date().toISOString().slice(0, 7) + '-01';
     return c.json(await app.userService.buildCalendarMonth(session.app_user_id, month));
   });
 
-  api.patch('/api/v1/profile', async (c) => {
+  api.patch('/v1/profile', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
     const payload = updateProfileSchema.parse(await c.req.json());
@@ -167,12 +167,12 @@ export function createApiRouter() {
     return c.json({ ok: true });
   });
 
-  api.get('/api/v1/admin/overview', async (c) => {
+  api.get('/v1/admin/overview', async (c) => {
     const app = c.get('app');
     return c.json(await app.adminService.overview());
   });
 
-  api.post('/api/v1/admin/subscriptions/grant', async (c) => {
+  api.post('/v1/admin/subscriptions/grant', async (c) => {
     const app = c.get('app');
     const session = c.get('session');
 

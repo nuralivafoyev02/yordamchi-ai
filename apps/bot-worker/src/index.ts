@@ -53,7 +53,7 @@ app.onError((error, c) => {
 app.get('/', (c) => c.json(healthPayload()));
 app.get('/health', (c) => c.json(healthPayload()));
 
-app.route('/', createApiRouter());
+app.route('/api', createApiRouter());
 
 app.post('/telegram/webhook', async (c) => {
   const appContext = c.get('app');
