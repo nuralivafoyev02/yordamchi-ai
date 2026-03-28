@@ -109,10 +109,10 @@ function accountTone(index: number) {
       </div>
 
       <div class="metric-grid">
-        <article v-for="metric in overviewMetrics" :key="metric.label" class="metric-card">
+        <article v-for="metric in overviewMetrics" :key="metric.label" :class="['metric-card', `metric-card--${metric.tone}`]">
           <span>{{ metric.label }}</span>
           <strong>{{ metric.value }}</strong>
-          <StatusBadge :tone="metric.tone">{{ metric.label }}</StatusBadge>
+          <i class="metric-card__accent" />
         </article>
       </div>
 
@@ -307,7 +307,8 @@ function accountTone(index: number) {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 8px;
+  gap: 10px;
+  min-height: 114px;
   padding: 12px;
 }
 
@@ -317,8 +318,28 @@ function accountTone(index: number) {
 }
 
 .metric-card strong {
-  font-size: var(--text-body);
+  font-size: var(--text-lg);
   font-weight: var(--weight-interactive);
+}
+
+.metric-card__accent {
+  border-radius: 999px;
+  display: block;
+  height: 6px;
+  width: 42px;
+}
+
+.metric-card--success .metric-card__accent {
+  background: linear-gradient(90deg, rgba(24, 217, 122, 0.24), var(--success));
+}
+
+.metric-card--warning .metric-card__accent {
+  background: linear-gradient(90deg, rgba(245, 200, 76, 0.22), var(--warning));
+}
+
+.metric-card--info .metric-card__accent,
+.metric-card--premium .metric-card__accent {
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.2), var(--accent));
 }
 
 .quick-action-bar {

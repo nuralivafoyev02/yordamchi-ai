@@ -23,7 +23,7 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: var(--shell-gradient);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
@@ -103,12 +103,12 @@ svg {
 
 :where(.page) {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   max-width: 100%;
   overscroll-behavior-y: contain;
   overflow-x: hidden;
   overflow-y: visible;
-  padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 22px);
+  padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 26px);
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
@@ -124,7 +124,7 @@ svg {
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   letter-spacing: -0.02em;
-  line-height: 1.25;
+  line-height: 1.15;
   margin: 0;
 }
 

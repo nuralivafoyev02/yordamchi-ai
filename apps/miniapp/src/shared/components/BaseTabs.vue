@@ -77,29 +77,29 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 .tabs {
   align-items: center;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
     color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
   border: 1px solid var(--border-strong);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
   border-top-color: color-mix(in srgb, var(--text-muted) 20%, transparent);
-  border-radius: 24px;
+  border-radius: 26px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
   margin: 0 auto;
   max-width: 520px;
-  padding: 8px 10px 10px;
+  padding: 10px 10px 12px;
   pointer-events: auto;
 }
 
 .tabs__item {
   align-items: center;
-  border-radius: 18px;
+  border-radius: 20px;
   color: var(--text-soft);
   display: grid;
-  gap: 4px;
+  gap: 5px;
   justify-items: center;
-  min-height: 52px;
-  padding: 6px 6px 8px;
+  min-height: 56px;
+  padding: 7px 6px 9px;
   text-align: center;
   transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
 }
@@ -110,14 +110,18 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 }
 
 .tabs__item span {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--weight-interactive);
   line-height: 1.1;
 }
 
 .tabs__item--active {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  background:
+    linear-gradient(180deg, rgba(var(--accent-rgb), 0.16), rgba(var(--accent-rgb), 0.08)),
+    color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 10px 22px rgba(0, 0, 0, 0.16);
   color: var(--accent);
 }
 </style>

@@ -262,10 +262,10 @@ watch(
       </BaseCard>
 
       <div class="stat-grid">
-        <BaseCard v-for="card in statCards" :key="card.label" class="stat-card">
+        <BaseCard v-for="card in statCards" :key="card.label" :class="['stat-card', `stat-card--${card.tone}`]">
           <span>{{ card.label }}</span>
           <strong>{{ card.value }}</strong>
-          <StatusBadge :tone="card.tone">{{ card.label }}</StatusBadge>
+          <i class="stat-card__accent" />
         </BaseCard>
       </div>
 
@@ -310,7 +310,7 @@ watch(
 
 <style scoped>
 .dashboard-page {
-  gap: 14px;
+  gap: 16px;
 }
 
 .dashboard-top {
@@ -318,6 +318,7 @@ watch(
   display: flex;
   gap: 12px;
   justify-content: space-between;
+  padding-top: 2px;
 }
 
 .user-chip {
@@ -330,7 +331,7 @@ watch(
   display: inline-flex;
   gap: 10px;
   max-width: calc(100% - 108px);
-  padding: 6px 12px 6px 6px;
+  padding: 7px 14px 7px 7px;
 }
 
 .user-chip__avatar {
@@ -354,6 +355,7 @@ watch(
 }
 
 .user-chip__copy strong {
+  font-size: var(--text-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -392,10 +394,10 @@ watch(
 .hero-card {
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--hero-glow) 34%, transparent), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
     var(--surface);
   display: grid;
-  gap: 16px;
+  gap: 18px;
   overflow: hidden;
   position: relative;
 }
@@ -457,7 +459,7 @@ watch(
 .hero-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: 10px 12px;
 }
 
 .hero-card__meta span {
@@ -466,12 +468,12 @@ watch(
   border-radius: 999px;
   color: var(--text-muted);
   font-size: var(--text-xs);
-  padding: 6px 10px;
+  padding: 7px 12px;
 }
 
 .hero-card__actions {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -483,10 +485,10 @@ watch(
   color: var(--text);
   cursor: pointer;
   display: grid;
-  gap: 6px;
+  gap: 7px;
   justify-items: start;
-  min-height: 56px;
-  padding: 10px 12px;
+  min-height: 60px;
+  padding: 12px;
 }
 
 .hero-action span {
@@ -508,13 +510,38 @@ watch(
 
 .stat-grid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .stat-card {
   display: grid;
-  gap: 8px;
+  gap: 10px;
+  min-height: 118px;
+}
+
+.stat-card__accent {
+  border-radius: 999px;
+  display: block;
+  height: 6px;
+  width: 44px;
+}
+
+.stat-card--success .stat-card__accent {
+  background: linear-gradient(90deg, rgba(24, 217, 122, 0.24), var(--success));
+}
+
+.stat-card--warning .stat-card__accent {
+  background: linear-gradient(90deg, rgba(245, 200, 76, 0.22), var(--warning));
+}
+
+.stat-card--danger .stat-card__accent {
+  background: linear-gradient(90deg, rgba(255, 93, 115, 0.22), var(--danger));
+}
+
+.stat-card--info .stat-card__accent,
+.stat-card--premium .stat-card__accent {
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.2), var(--accent));
 }
 
 .stat-card span {
@@ -523,13 +550,14 @@ watch(
 }
 
 .stat-card strong {
-  font-size: var(--text-body);
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
+  letter-spacing: -0.02em;
 }
 
 .signal-card {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .signal-card__header {
@@ -554,8 +582,8 @@ watch(
   border-top: 1px solid var(--divider);
   display: flex;
   gap: 12px;
-  min-height: 54px;
-  padding: 10px 0;
+  min-height: 58px;
+  padding: 12px 0;
 }
 
 .signal-row:first-child {
@@ -566,6 +594,15 @@ watch(
   border-radius: 14px;
   flex: 0 0 36px;
   height: 36px;
+  position: relative;
+}
+
+.signal-row__dot::after {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  position: absolute;
 }
 
 .signal-row__dot--info {

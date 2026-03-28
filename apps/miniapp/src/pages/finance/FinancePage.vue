@@ -549,10 +549,10 @@ watch(
       />
 
       <div class="insight-grid">
-        <BaseCard v-for="card in insightCards" :key="card.label" class="insight-card">
+        <BaseCard v-for="card in insightCards" :key="card.label" :class="['insight-card', `insight-card--${card.tone}`]">
           <span>{{ card.label }}</span>
           <strong>{{ card.value }}</strong>
-          <StatusBadge :tone="card.tone">{{ card.label }}</StatusBadge>
+          <i class="insight-card__accent" />
         </BaseCard>
       </div>
     </template>
@@ -827,7 +827,7 @@ watch(
 <style scoped>
 .page {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .page__header {
@@ -863,6 +863,7 @@ watch(
   background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
   border: 1px solid var(--border-strong);
   border-radius: 999px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   display: flex;
   gap: 8px;
   padding: 4px;
@@ -920,10 +921,10 @@ watch(
   border-radius: 14px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--weight-interactive);
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 38px;
+  padding: 0 12px;
 }
 
 .section-tabs__item--active {
@@ -934,7 +935,7 @@ watch(
 
 .insight-grid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -944,6 +945,7 @@ watch(
     var(--surface);
   display: grid;
   gap: 10px;
+  min-height: 116px;
 }
 
 .insight-card span {
@@ -952,8 +954,31 @@ watch(
 }
 
 .insight-card strong {
-  font-size: var(--text-body);
+  font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
+}
+
+.insight-card__accent {
+  border-radius: 999px;
+  display: block;
+  height: 6px;
+  width: 42px;
+}
+
+.insight-card--success .insight-card__accent {
+  background: linear-gradient(90deg, rgba(24, 217, 122, 0.24), var(--success));
+}
+
+.insight-card--warning .insight-card__accent {
+  background: linear-gradient(90deg, rgba(245, 200, 76, 0.22), var(--warning));
+}
+
+.insight-card--danger .insight-card__accent {
+  background: linear-gradient(90deg, rgba(255, 93, 115, 0.22), var(--danger));
+}
+
+.insight-card--info .insight-card__accent {
+  background: linear-gradient(90deg, rgba(85, 166, 255, 0.22), var(--info));
 }
 
 .panel-card {
@@ -961,7 +986,7 @@ watch(
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
     var(--surface);
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .panel-card__header {

@@ -62,6 +62,11 @@ onMounted(async () => {
 
 <template>
   <div class="app-shell">
+    <div class="app-shell__backdrop">
+      <span class="app-shell__orb app-shell__orb--warm" />
+      <span class="app-shell__orb app-shell__orb--cool" />
+    </div>
+
     <main class="app-shell__content">
       <PhoneRegistrationGate
         v-if="showPhoneGate"
@@ -84,18 +89,49 @@ onMounted(async () => {
 
 <style scoped>
 .app-shell {
-  background: var(--bg);
+  background: var(--shell-gradient);
   min-height: 100dvh;
   overflow-x: hidden;
-  padding: calc(var(--safe-top) + 10px) 12px 0;
+  padding: calc(var(--safe-top) + 12px) 14px 0;
   position: relative;
 }
 
+.app-shell__backdrop {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+.app-shell__orb {
+  border-radius: 999px;
+  filter: blur(72px);
+  opacity: 0.36;
+  position: absolute;
+}
+
+.app-shell__orb--warm {
+  background: color-mix(in srgb, var(--hero-glow) 60%, transparent);
+  height: 220px;
+  right: -72px;
+  top: 28px;
+  width: 220px;
+}
+
+.app-shell__orb--cool {
+  background: rgba(85, 166, 255, 0.18);
+  height: 180px;
+  left: -76px;
+  top: 180px;
+  width: 180px;
+}
+
 .app-shell__content {
+  backdrop-filter: blur(2px);
   min-height: 100dvh;
   margin: 0 auto;
   max-width: 430px;
-  padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 18px);
+  padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 20px);
   position: relative;
   z-index: 1;
 }

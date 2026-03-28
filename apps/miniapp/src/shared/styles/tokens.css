@@ -1,7 +1,7 @@
 :root,
 :root[data-theme="blue"] {
-  --font-display: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
-  --font-body: "Inter", "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: "Avenir Next", "SF Pro Display", "Segoe UI", sans-serif;
+  --font-body: "SF Pro Text", "Avenir Next", "Segoe UI", sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -16,15 +16,15 @@
   --space-8: 20px;
   --space-9: 24px;
 
-  --text-2xs: 10px;
-  --text-xs: 11px;
-  --text-sm: 12px;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
   --text-section: 12px;
-  --text-body: 13px;
-  --text-md: 13px;
-  --text-lg: 15px;
-  --text-xl: 18px;
-  --text-2xl: 24px;
+  --text-body: 14px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
 
   --weight-body: 400;
   --weight-interactive: 500;
@@ -37,18 +37,18 @@
   --radius-sm: 10px;
   --radius-xs: 6px;
 
-  --button-height: 36px;
+  --button-height: 38px;
   --button-height-lg: 44px;
   --field-height: 46px;
-  --nav-height: 72px;
+  --nav-height: 78px;
   --nav-z: 1000;
   --tab-icon-size: 22px;
   --toast-z: 3000;
   --modal-backdrop-z: 2000;
   --modal-sheet-z: 2001;
 
-  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.28);
-  --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.22);
+  --shadow-card: 0 18px 38px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 28px 58px rgba(0, 0, 0, 0.26);
   --overlay: rgba(2, 6, 15, 0.72);
   --backdrop-blur: 16px;
 
@@ -61,18 +61,18 @@
   --tg-button-text: var(--tg-theme-button-text-color, #f6f8ff);
   --tg-destructive: var(--tg-theme-destructive-text-color, #ff6b5c);
 
-  --bg: #070b14;
-  --bg-muted: #0a0f1c;
-  --surface: #0c1120;
-  --surface-strong: #11182a;
-  --surface-soft: #151d31;
-  --surface-contrast: #1a2338;
+  --bg: #060a14;
+  --bg-muted: #09101d;
+  --surface: #0c1222;
+  --surface-strong: #131b2f;
+  --surface-soft: #182136;
+  --surface-contrast: #202b42;
   --text: #f6f8ff;
   --text-muted: #a5adc4;
   --text-soft: #6f7892;
-  --border: rgba(255, 255, 255, 0.05);
-  --border-strong: rgba(255, 255, 255, 0.08);
-  --divider: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --divider: rgba(255, 255, 255, 0.07);
 
   --accent: #ff6f61;
   --accent-rgb: 255, 111, 97;
@@ -84,6 +84,10 @@
   --accent-strong: color-mix(in srgb, var(--accent) 76%, var(--text) 24%);
   --hero-gradient: linear-gradient(135deg, var(--accent-start), var(--accent-end));
   --hero-glow: color-mix(in srgb, var(--accent) 42%, transparent);
+  --shell-gradient:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--hero-glow) 18%, transparent), transparent 36%),
+    radial-gradient(circle at top left, rgba(85, 166, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, #090f1d 0%, #060a14 52%, #050913 100%);
   --ai-start: #7a5cff;
   --ai-end: #3ca8ff;
   --ai-gradient: linear-gradient(135deg, var(--ai-start), var(--ai-end));
