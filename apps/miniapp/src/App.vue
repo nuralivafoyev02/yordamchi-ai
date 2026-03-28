@@ -135,4 +135,14 @@ onMounted(async () => {
   position: relative;
   z-index: 1;
 }
+
+@media (hover: hover) and (pointer: fine) {
+  .app-shell__content {
+    height: calc(100dvh - var(--safe-top) - 12px);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+}
 </style>

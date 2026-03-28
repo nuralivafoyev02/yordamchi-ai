@@ -60,8 +60,17 @@ export function resolveTelegramTimeZone(fallback = 'UTC') {
   return fallback;
 }
 
+function shouldApplyTouchViewportLock() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const coarseTouchDevice = window.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? false;
+  return coarseTouchDevice || (navigator.maxTouchPoints > 1 && window.innerWidth <= 1024);
+}
+
 export function lockMiniAppViewport() {
-  if (viewportLocked || typeof document === 'undefined') {
+  if (viewportLocked || typeof document === 'undefined' || !shouldApplyTouchViewportLock()) {
     return;
   }
 
@@ -96,7 +105,11 @@ export function lockMiniAppViewport() {
 
 export function markTelegramReady() {
   lockMiniAppViewport();
-  window.Telegram?.WebApp?.disableVerticalSwipes?.();
+
+  if (shouldApplyTouchViewportLock()) {
+    window.Telegram?.WebApp?.disableVerticalSwipes?.();
+  }
+
   window.Telegram?.WebApp?.expand?.();
   window.Telegram?.WebApp?.ready?.();
 }
