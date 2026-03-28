@@ -8,6 +8,7 @@ export interface EnvBindings {
   SUPABASE_SERVICE_ROLE_KEY: string;
   SUPABASE_URL: string;
   TELEGRAM_BOT_TOKEN: string;
+  TELEGRAM_LOG_CHANNEL_ID?: string;
   TELEGRAM_MINIAPP_URL: string;
   TELEGRAM_WEBHOOK_SECRET: string;
 }
@@ -24,6 +25,13 @@ export function parseAdminTelegramIds(env: Pick<EnvBindings, 'ADMIN_IDS' | 'ADMI
       .map((value) => Number(value.trim()))
       .filter((value) => Number.isInteger(value) && value > 0),
   );
+}
+
+const DEFAULT_TELEGRAM_LOG_CHANNEL_ID = -1003594860582;
+
+export function parseTelegramLogChannelId(env: Pick<EnvBindings, 'TELEGRAM_LOG_CHANNEL_ID'>) {
+  const parsed = Number(env.TELEGRAM_LOG_CHANNEL_ID ?? DEFAULT_TELEGRAM_LOG_CHANNEL_ID);
+  return Number.isInteger(parsed) ? parsed : DEFAULT_TELEGRAM_LOG_CHANNEL_ID;
 }
 
 export function readEnv(env: EnvBindings): EnvBindings {

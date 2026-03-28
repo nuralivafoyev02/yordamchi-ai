@@ -1,7 +1,9 @@
 import { t, type ParsedCommand } from '@yordamchi/shared';
 import { confirmationKeyboard, miniAppKeyboard } from '../keyboards/common';
-import { confirmationMessage, fallbackMessage, helpMessage, successMessage, summaryMessage } from '../messages/formatter';
+import { confirmationMessage, fallbackMessage, helpMessage, openHintMessage, premiumMessage, successMessage, summaryMessage } from '../messages/formatter';
+import { logParsedActionSuccess } from './action-logging';
 import { executeParsedAction } from './executor';
+import { resolveQuickActionFromText, runQuickAction } from './quick-actions';
 import { hasRegisteredPhone, promptPhoneRegistration, resolveTelegramUserContext } from './registration';
 import type { AppContext } from '../../core/app-context';
 import type { TelegramMessage } from '../../core/telegram/types';
@@ -20,8 +22,13 @@ async function handlePendingConfirmation(app: AppContext, userId: string, locale
 
   if (YES_VALUES.has(normalized) && payload?.payload) {
     await executeParsedAction(app, userId, locale, timeZone, payload.payload);
+    await logParsedActionSuccess(app, {
+      parsed: payload.payload,
+      source: 'text_confirm',
+      userId,
+    });
     await app.stateService.clear(userId);
-    await app.telegram.sendMessage(message.chat.id, successMessage(locale, payload.payload.intent), {
+    await app.telegram.sendMessage(message.chat.id, successMessage(locale, payload.payload, timeZone), {
       reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return true;
@@ -61,6 +68,21 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
     return;
   }
 
+  const quickAction = resolveQuickActionFromText(locale, message.text);
+
+  if (quickAction) {
+    await app.stateService.clear(userId);
+    await runQuickAction(app, {
+      action: quickAction,
+      chatId: message.chat.id,
+      isPremium: profile.subscription.isPremium,
+      locale,
+      timeZone: profile.timezone,
+      userId,
+    });
+    return;
+  }
+
   const parsed = app.nlu.parse(message.text, {
     defaultCurrency: profile.baseCurrency,
     locale,
@@ -69,14 +91,13 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
 
   if (parsed.intent === 'help') {
     await app.telegram.sendMessage(message.chat.id, helpMessage(locale), {
-      parse_mode: 'HTML',
       reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
   }
 
   if (parsed.intent === 'open_miniapp') {
-    await app.telegram.sendMessage(message.chat.id, t(locale, 'common.openMiniApp'), {
+    await app.telegram.sendMessage(message.chat.id, openHintMessage(locale), {
       reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
@@ -92,7 +113,6 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
         plans: dashboard.upcomingPlans.length,
       }),
       {
-        parse_mode: 'HTML',
         reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       },
     );
@@ -111,7 +131,7 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
       message: 'Parser could not classify the incoming message.',
       userId,
     });
-    await app.telegram.sendMessage(message.chat.id, fallbackMessage(locale), {
+    await app.telegram.sendMessage(message.chat.id, fallbackMessage(locale, message.text), {
       reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
@@ -138,7 +158,12 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
   try {
     if (parsed.confidence >= 0.78) {
       await executeParsedAction(app, userId, locale, profile.timezone, parsed);
-      await app.telegram.sendMessage(message.chat.id, successMessage(locale, parsed.intent), {
+      await logParsedActionSuccess(app, {
+        parsed,
+        source: 'direct_parse',
+        userId,
+      });
+      await app.telegram.sendMessage(message.chat.id, successMessage(locale, parsed, profile.timezone), {
         reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       });
       return;
@@ -161,13 +186,12 @@ export async function handleText(app: AppContext, message: TelegramMessage) {
         : parsed.intent,
       payload: parsed as unknown as Record<string, unknown>,
     });
-    await app.telegram.sendMessage(message.chat.id, confirmationMessage(locale, parsed), {
-      parse_mode: 'HTML',
+    await app.telegram.sendMessage(message.chat.id, confirmationMessage(locale, parsed, message.text, profile.timezone), {
       reply_markup: confirmationKeyboard(locale),
     });
   } catch (error) {
     if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'PREMIUM_REQUIRED') {
-      await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.premiumRequired'), {
+      await app.telegram.sendMessage(message.chat.id, premiumMessage(locale, profile.subscription.isPremium), {
         reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
       });
       return;

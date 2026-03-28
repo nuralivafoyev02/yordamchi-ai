@@ -3,6 +3,7 @@ export interface TelegramChat {
 }
 
 export interface TelegramMessage {
+  audio?: Record<string, unknown>;
   chat: TelegramChat;
   contact?: {
     first_name?: string;
@@ -20,6 +21,8 @@ export interface TelegramMessage {
   };
   message_id: number;
   text?: string;
+  video_note?: Record<string, unknown>;
+  voice?: Record<string, unknown>;
 }
 
 export interface TelegramCallbackQuery {
@@ -65,10 +68,14 @@ export interface TelegramInlineKeyboard {
 export interface TelegramReplyKeyboardButton {
   request_contact?: boolean;
   text: string;
+  web_app?: {
+    url: string;
+  };
 }
 
 export interface TelegramReplyKeyboard {
   keyboard: Array<Array<TelegramReplyKeyboardButton>>;
+  is_persistent?: boolean;
   one_time_keyboard?: boolean;
   resize_keyboard?: boolean;
 }

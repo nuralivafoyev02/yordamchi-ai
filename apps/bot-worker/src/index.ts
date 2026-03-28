@@ -8,6 +8,7 @@ import type { TelegramUpdate } from './core/telegram/types';
 import { handleCallback } from './bot/handlers/callbacks';
 import { handleCommand } from './bot/handlers/commands';
 import { miniAppKeyboard } from './bot/keyboards/common';
+import { handleUnsupportedMedia } from './bot/handlers/media';
 import { handleContactRegistration } from './bot/handlers/registration';
 import { handleText } from './bot/handlers/text';
 import { createApiRouter } from './api/routes';
@@ -20,6 +21,7 @@ type Variables = {
 };
 
 const app = new Hono<{ Bindings: EnvBindings; Variables: Variables }>();
+let menuButtonConfigured = false;
 
 function normalizeLocale(value?: string | null): AppLocale {
   return locales.includes(value as AppLocale) ? (value as AppLocale) : 'uz';
@@ -58,6 +60,21 @@ async function resolveUpdateLocale(appContext: ReturnType<typeof buildAppContext
   }
 
   return 'uz';
+}
+
+async function ensureTelegramMenuButton(appContext: ReturnType<typeof buildAppContext>, env: EnvBindings) {
+  if (menuButtonConfigured) {
+    return;
+  }
+
+  try {
+    await appContext.telegram.setChatMenuButton(t('uz', 'common.openMiniApp'), env.TELEGRAM_MINIAPP_URL);
+    menuButtonConfigured = true;
+  } catch (error) {
+    appContext.logger.warn('telegram_menu_button_sync_failed', {
+      error: error instanceof Error ? error.message : 'Unknown menu button error',
+    });
+  }
 }
 
 app.use('*', async (c, next) => {
@@ -119,10 +136,14 @@ app.post('/telegram/webhook', async (c) => {
   const update = (await c.req.json()) as TelegramUpdate;
 
   try {
+    await ensureTelegramMenuButton(appContext, c.env);
+
     if (update.message?.text?.startsWith('/')) {
       await handleCommand(appContext, update.message);
     } else if (update.message?.contact) {
       await handleContactRegistration(appContext, update.message);
+    } else if (update.message?.voice || update.message?.audio || update.message?.video_note) {
+      await handleUnsupportedMedia(appContext, update.message);
     } else if (update.message?.text) {
       await handleText(appContext, update.message);
     } else if (update.callback_query) {
@@ -167,6 +188,7 @@ export default {
   fetch: app.fetch,
   scheduled: async (_event: ScheduledEvent, env: EnvBindings) => {
     const appContext = buildAppContext(env, crypto.randomUUID());
+    await ensureTelegramMenuButton(appContext, env);
     await dispatchReminders(appContext);
   },
 };

@@ -3,6 +3,7 @@ import type {
   AppLocale,
   CategorySnapshot,
   CurrencyCode,
+  DashboardPlan,
   DashboardSnapshot,
   NotificationSettingsSnapshot,
   ThemeKey,
@@ -11,7 +12,7 @@ import type {
   UsageMetric,
   UserProfileSnapshot,
 } from '@yordamchi/shared';
-import { FREE_PLAN_LIMITS, locales, startOfMonthIso } from '@yordamchi/shared';
+import { addCalendarDays, FREE_PLAN_LIMITS, getZonedParts, locales, makeDateInTimeZone, startOfMonthIso } from '@yordamchi/shared';
 import { AppError } from '../../core/errors/app-error';
 import { parseAdminTelegramIds, type EnvBindings } from '../../core/config/env';
 import { Logger } from '../../core/logger/logger';
@@ -348,6 +349,31 @@ export class UserService {
       name: category.name,
       slug: category.slug,
     }));
+  }
+
+  async listTodayPlans(userId: string, timeZone: string): Promise<DashboardPlan[]> {
+    const now = new Date();
+    const parts = getZonedParts(now, timeZone);
+    const nextDay = addCalendarDays(parts.year, parts.month, parts.day, 1);
+    const dayStart = makeDateInTimeZone(timeZone, parts.year, parts.month, parts.day, 0, 0, 0).toISOString();
+    const nextDayStart = makeDateInTimeZone(timeZone, nextDay.year, nextDay.month, nextDay.day, 0, 0, 0).toISOString();
+
+    const { data, error } = await this.client
+      .from('plans')
+      .select('id, title, due_at, priority, status')
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .is('deleted_at', null)
+      .gte('due_at', dayStart)
+      .lt('due_at', nextDayStart)
+      .order('due_at')
+      .limit(6);
+
+    if (error) {
+      throw new AppError('Failed to load today plans', 500, 'DATABASE_ERROR', { details: error });
+    }
+
+    return data ?? [];
   }
 
   async buildDashboard(userId: string, timeZone: string): Promise<DashboardSnapshot> {

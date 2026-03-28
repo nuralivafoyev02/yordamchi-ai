@@ -69,7 +69,6 @@ export async function handleContactRegistration(app: AppContext, message: Telegr
     reply_markup: removeKeyboard(),
   });
   await app.telegram.sendMessage(message.chat.id, helpMessage(locale), {
-    parse_mode: 'HTML',
     reply_markup: miniAppKeyboard(locale, app.env.TELEGRAM_MINIAPP_URL),
   });
   return true;

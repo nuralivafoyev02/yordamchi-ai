@@ -13,6 +13,12 @@ describe('parser primitives', () => {
     expect(parsed.currency).toBe('UZS');
   });
 
+  it('does not treat time phrases as money amounts', () => {
+    const parsed = parseAmount('ertalab 9 da jamoa bilan meeting');
+
+    expect(parsed.amount).toBeNull();
+  });
+
   it('parses relative uzbek dates', () => {
     expect(parseDateExpression('ertaga', 'uz', 'Asia/Tashkent', FIXED_NOW).date).toBe('2026-03-28');
     expect(parseDateExpression('indin', 'uz', 'Asia/Tashkent', FIXED_NOW).date).toBe('2026-03-29');
@@ -39,6 +45,45 @@ describe('parser command flow', () => {
     expect(parsed.intent).toBe('create_expense');
     expect(parsed.transaction?.amount).toBe(200_000);
     expect(parsed.transaction?.status).toBe('scheduled');
+  });
+
+  it('keeps plan title clean when explicit time includes trailing "da"', () => {
+    const parsed = parseCommand('bugun 15:30 da mirshod bilan meeting', {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('create_plan');
+    expect(parsed.plan?.scheduledDate).toBe('2026-03-27');
+    expect(parsed.plan?.scheduledTime).toBe('15:30');
+    expect(parsed.plan?.title).toBe('Mirshod bilan meeting');
+  });
+
+  it('boosts timed plan phrases high enough to skip confirmation', () => {
+    const parsed = parseCommand('14:20 da ozodbek bilan uchrashuv', {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('create_plan');
+    expect(parsed.confidence).toBeGreaterThanOrEqual(0.78);
+    expect(parsed.plan?.scheduledTime).toBe('14:20');
+    expect(parsed.plan?.title).toBe('Ozodbek bilan uchrashuv');
+  });
+
+  it('treats "9 da" morning meetings as plans instead of amounts', () => {
+    const parsed = parseCommand('ertalab 9 da jamoa bilan meeting', {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('create_plan');
+    expect(parsed.confidence).toBeGreaterThanOrEqual(0.78);
+    expect(parsed.plan?.scheduledTime).toBe('09:00');
+    expect(parsed.plan?.title).toBe('Jamoa bilan meeting');
   });
 
   it('classifies income correctly', () => {

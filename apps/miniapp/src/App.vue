@@ -73,9 +73,7 @@ onMounted(async () => {
         :title="uiStore.text('errors.generic')"
       />
       <router-view v-else v-slot="{ Component }">
-        <Transition mode="out-in" name="page-fade">
-          <component :is="Component" />
-        </Transition>
+        <component :is="Component" />
       </router-view>
     </main>
 
@@ -100,15 +98,5 @@ onMounted(async () => {
   padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 18px);
   position: relative;
   z-index: 1;
-}
-
-:deep(.page-fade-enter-active),
-:deep(.page-fade-leave-active) {
-  transition: opacity 150ms ease;
-}
-
-:deep(.page-fade-enter-from),
-:deep(.page-fade-leave-to) {
-  opacity: 0;
 }
 </style>

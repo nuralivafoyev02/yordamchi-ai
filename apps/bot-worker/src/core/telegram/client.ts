@@ -26,6 +26,18 @@ export class TelegramClient {
     });
   }
 
+  async setChatMenuButton(text: string, url: string) {
+    return this.call('setChatMenuButton', {
+      menu_button: {
+        text,
+        type: 'web_app',
+        web_app: {
+          url,
+        },
+      },
+    });
+  }
+
   private async call(method: string, body: Record<string, unknown>) {
     const response = await fetch(`https://api.telegram.org/bot${this.env.TELEGRAM_BOT_TOKEN}/${method}`, {
       body: JSON.stringify(body),

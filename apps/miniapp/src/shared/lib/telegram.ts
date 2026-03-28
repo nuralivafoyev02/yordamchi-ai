@@ -1,10 +1,13 @@
 import type { AppLocale } from '@yordamchi/shared';
 
+let viewportLocked = false;
+
 declare global {
   interface Window {
     Telegram?: {
       WebApp?: {
         close?: () => void;
+        disableVerticalSwipes?: () => void;
         expand?: () => void;
         initData?: string;
         initDataUnsafe?: {
@@ -57,7 +60,43 @@ export function resolveTelegramTimeZone(fallback = 'UTC') {
   return fallback;
 }
 
+export function lockMiniAppViewport() {
+  if (viewportLocked || typeof document === 'undefined') {
+    return;
+  }
+
+  viewportLocked = true;
+
+  const preventGestureZoom = (event: Event) => {
+    event.preventDefault();
+  };
+
+  const preventPinchZoom = (event: TouchEvent) => {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  };
+
+  let lastTouchEndAt = 0;
+  const preventDoubleTapZoom = (event: TouchEvent) => {
+    const now = Date.now();
+
+    if (now - lastTouchEndAt < 320) {
+      event.preventDefault();
+    }
+
+    lastTouchEndAt = now;
+  };
+
+  document.addEventListener('gesturestart', preventGestureZoom, { passive: false });
+  document.addEventListener('gesturechange', preventGestureZoom, { passive: false });
+  document.addEventListener('touchmove', preventPinchZoom, { passive: false });
+  document.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+}
+
 export function markTelegramReady() {
+  lockMiniAppViewport();
+  window.Telegram?.WebApp?.disableVerticalSwipes?.();
   window.Telegram?.WebApp?.expand?.();
   window.Telegram?.WebApp?.ready?.();
 }

@@ -95,7 +95,7 @@ function findPhrase(text: string, phrases: string[]): string | null {
 
 function parseTimeHint(text: string): TimeHint | null {
   const explicit = text.match(
-    /\b(?:soat\s*(?<hour1>\d{1,2})(?::(?<minute1>\d{2}))?|(?<hour2>\d{1,2}):(?<minute2>\d{2})|(?<hour3>\d{1,2})\s*da|(?<hour4>\d{1,2})\s*(?<ampm>am|pm))\b/u,
+    /\b(?:soat\s*(?<hour1>\d{1,2})(?::(?<minute1>\d{2}))?(?:\s*da)?|(?<hour2>\d{1,2}):(?<minute2>\d{2})(?:\s*da)?|(?<hour3>\d{1,2})\s*da|(?<hour4>\d{1,2})\s*(?<ampm>am|pm))\b/u,
   );
   const period =
     findPhrase(text, ['kechqurun', 'вечером', 'evening'])

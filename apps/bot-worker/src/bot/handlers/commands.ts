@@ -1,6 +1,5 @@
-import { t } from '@yordamchi/shared';
 import { miniAppKeyboard } from '../keyboards/common';
-import { helpMessage, summaryMessage } from '../messages/formatter';
+import { helpMessage, openHintMessage, startMessage, summaryMessage } from '../messages/formatter';
 import { hasRegisteredPhone, promptPhoneRegistration, resolveTelegramUserContext } from './registration';
 import type { AppContext } from '../../core/app-context';
 import type { TelegramMessage } from '../../core/telegram/types';
@@ -19,16 +18,34 @@ export async function handleCommand(app: AppContext, message: TelegramMessage) {
     return;
   }
 
-  if (command === '/start' || command === '/help') {
+  if (command === '/start') {
+    await app.logService.botLog({
+      channelLevel: 'INFO',
+      context: {
+        command: '/start',
+        telegramUserId: message.from?.id ?? null,
+        username: message.from?.username ?? null,
+      },
+      event: 'bot_start',
+      level: 'info',
+      message: 'User /start bosdi',
+      userId: context.userId,
+    });
+    await app.telegram.sendMessage(chatId, startMessage(context.locale), {
+      reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL),
+    });
+    return;
+  }
+
+  if (command === '/help') {
     await app.telegram.sendMessage(chatId, helpMessage(context.locale), {
-      parse_mode: 'HTML',
       reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
   }
 
   if (command === '/app') {
-    await app.telegram.sendMessage(chatId, t(context.locale, 'common.openMiniApp'), {
+    await app.telegram.sendMessage(chatId, openHintMessage(context.locale), {
       reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL),
     });
     return;
@@ -44,13 +61,12 @@ export async function handleCommand(app: AppContext, message: TelegramMessage) {
         debts: dashboard.openDebts.length,
         plans: dashboard.upcomingPlans.length,
       }),
-      { parse_mode: 'HTML', reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL) },
+      { reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL) },
     );
     return;
   }
 
-  await app.telegram.sendMessage(chatId, helpMessage(context.locale), {
-    parse_mode: 'HTML',
+  await app.telegram.sendMessage(chatId, startMessage(context.locale), {
     reply_markup: miniAppKeyboard(context.locale, app.env.TELEGRAM_MINIAPP_URL),
   });
 }

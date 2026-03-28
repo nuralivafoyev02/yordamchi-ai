@@ -2,9 +2,21 @@ import type { AppLocale } from '@yordamchi/shared';
 import { t } from '@yordamchi/shared';
 import type { TelegramInlineKeyboard, TelegramRemoveKeyboard, TelegramReplyKeyboard } from '../../core/telegram/types';
 
-export function miniAppKeyboard(locale: AppLocale, url: string): TelegramInlineKeyboard {
+export function miniAppKeyboard(locale: AppLocale, _url: string): TelegramReplyKeyboard {
+  void _url;
   return {
-    inline_keyboard: [[{ text: t(locale, 'common.openMiniApp'), web_app: { url } }]],
+    keyboard: [
+      [
+        { text: t(locale, 'bot.quickTodayPlans') },
+        { text: t(locale, 'finance.debts') },
+      ],
+      [
+        { text: t(locale, 'bot.quickGuide') },
+        { text: t(locale, 'common.premium') },
+      ],
+    ],
+    is_persistent: true,
+    resize_keyboard: true,
   };
 }
 

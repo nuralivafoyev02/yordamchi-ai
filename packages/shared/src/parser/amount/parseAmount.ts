@@ -27,7 +27,9 @@ function parseNumeric(raw: string): number {
 }
 
 export function parseAmount(text: string, defaultCurrency: CurrencyCode = 'UZS'): AmountParseResult {
-  const source = text.replace(/\b\d{1,2}:\d{2}\b/g, ' ');
+  const source = text
+    .replace(/\b\d{1,2}:\d{2}(?:\s*da)?\b/g, ' ')
+    .replace(/\b\d{1,2}\s*da\b/g, ' ');
   const match = source.match(AMOUNT_PATTERN);
 
   if (!match?.groups?.value) {

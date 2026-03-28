@@ -16,12 +16,13 @@ export function buildAppContext(env: EnvBindings, requestId: string) {
   const logger = new Logger({ requestId, scope: 'worker' });
   const supabase = createServiceClient(env);
   const reminderService = new ReminderService(supabase, env);
+  const telegram = new TelegramClient(env);
 
   return {
     adminService: new AdminService(supabase),
     env,
     financeService: new FinanceService(supabase, reminderService, env),
-    logService: new LogService(supabase, logger),
+    logService: new LogService(supabase, logger, telegram, env),
     logger,
     nlu: new RuleBasedNluAdapter(),
     planService: new PlanService(supabase, reminderService, env),
@@ -29,7 +30,7 @@ export function buildAppContext(env: EnvBindings, requestId: string) {
     reminderService,
     stateService: new StateService(supabase),
     supabase,
-    telegram: new TelegramClient(env),
+    telegram,
     userService: new UserService(supabase, logger, env),
   };
 }

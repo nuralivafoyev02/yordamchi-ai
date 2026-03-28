@@ -46,10 +46,11 @@ function containsAny(text: string, phrases: string[]): boolean {
 export function parseIntent(text: string, amount: AmountParseResult, date: DateParseResult): IntentScore[] {
   const normalized = normalizeText(text);
   const scores: IntentScore[] = [];
+  const hasPlanKeyword = containsAny(normalized, KEYWORDS.create_plan);
 
   for (const [intent, keywords] of Object.entries(KEYWORDS) as [IntentName, string[]][]) {
     for (const keyword of keywords) {
-      if (normalized.includes(keyword)) {
+      if (hasPhrase(normalized, keyword)) {
         pushScore(scores, intent, 0.22, `keyword:${keyword}`);
       }
     }
@@ -113,6 +114,10 @@ export function parseIntent(text: string, amount: AmountParseResult, date: DateP
 
   if (!amount.amount && date.matched) {
     pushScore(scores, 'create_plan', 0.28, 'date_without_amount');
+  }
+
+  if (!amount.amount && date.matched && !date.allDay && hasPlanKeyword) {
+    pushScore(scores, 'create_plan', 0.12, 'timed_plan_phrase');
   }
 
   if (!scores.length) {
