@@ -15,7 +15,11 @@ export async function logParsedActionSuccess(
     channelLevel: 'SUCCESS',
     context: {
       confidence: parsed.confidence,
+      dueAt: parsed.plan?.dueAt,
       intent: parsed.intent,
+      reminderOffsetMinutes: parsed.plan?.reminderOffsetMinutes,
+      scheduledDate: parsed.plan?.scheduledDate,
+      scheduledTime: parsed.plan?.scheduledTime,
       source,
       text: parsed.normalizedText,
     },

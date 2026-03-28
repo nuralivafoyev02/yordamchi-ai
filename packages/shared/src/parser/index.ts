@@ -26,7 +26,7 @@ function createPlan(text: string, date: ReturnType<typeof parseDateExpression>, 
   return {
     dueAt: date.dueAt,
     priority: 'medium',
-    reminderOffsetMinutes: reminderOffsetMinutes ?? 60,
+    reminderOffsetMinutes: reminderOffsetMinutes ?? 0,
     repeatRule: 'none',
     scheduledDate: date.date,
     scheduledTime: date.time,

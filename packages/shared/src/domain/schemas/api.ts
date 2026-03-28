@@ -48,7 +48,7 @@ export const createPlanSchema = z.object({
   status: planStatusSchema.default('pending'),
   priority: planPrioritySchema.default('medium'),
   repeatRule: repeatRuleSchema.default('none'),
-  reminderOffsetMinutes: z.number().int().min(0).max(10080).default(60),
+  reminderOffsetMinutes: z.number().int().min(0).max(10080).default(0),
   sourceText: z.string().max(1000).optional(),
   parserConfidence: z.number().min(0).max(1).optional(),
 });

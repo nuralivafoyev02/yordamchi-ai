@@ -57,7 +57,20 @@ describe('parser command flow', () => {
     expect(parsed.intent).toBe('create_plan');
     expect(parsed.plan?.scheduledDate).toBe('2026-03-27');
     expect(parsed.plan?.scheduledTime).toBe('15:30');
+    expect(parsed.plan?.reminderOffsetMinutes).toBe(0);
     expect(parsed.plan?.title).toBe('Mirshod bilan meeting');
+  });
+
+  it('preserves explicit reminder offsets for timed plans', () => {
+    const parsed = parseCommand('bugun 15:30 da mirshod bilan meeting 2 soat oldin eslat', {
+      locale: 'uz',
+      now: FIXED_NOW,
+      timeZone: 'Asia/Tashkent',
+    });
+
+    expect(parsed.intent).toBe('create_plan');
+    expect(parsed.plan?.scheduledTime).toBe('15:30');
+    expect(parsed.plan?.reminderOffsetMinutes).toBe(120);
   });
 
   it('boosts timed plan phrases high enough to skip confirmation', () => {

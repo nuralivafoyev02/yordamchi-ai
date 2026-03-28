@@ -5,6 +5,29 @@ import { AppError } from '../../core/errors/app-error';
 import type { EnvBindings } from '../../core/config/env';
 import { ReminderService } from './reminder-service';
 
+const DEFAULT_PLAN_REMINDER_OFFSET_MINUTES = 0;
+
+export function resolvePlanReminderSchedule(
+  dueAtIso: string,
+  reminderOffsetMinutes?: number | null,
+  now = new Date(),
+) {
+  const dueAt = new Date(dueAtIso);
+
+  if (Number.isNaN(dueAt.getTime()) || dueAt.getTime() <= now.getTime()) {
+    return null;
+  }
+
+  const offsetMinutes = Math.max(0, reminderOffsetMinutes ?? DEFAULT_PLAN_REMINDER_OFFSET_MINUTES);
+  const scheduledAt = new Date(dueAt.getTime() - offsetMinutes * 60 * 1000);
+
+  if (scheduledAt.getTime() > now.getTime()) {
+    return scheduledAt.toISOString();
+  }
+
+  return dueAt.toISOString();
+}
+
 export class PlanService {
   constructor(
     private readonly client: SupabaseClient,
@@ -21,7 +44,7 @@ export class PlanService {
         due_at: input.dueAt,
         parser_confidence: input.parserConfidence ?? null,
         priority: input.priority ?? 'medium',
-        reminder_offset_minutes: input.reminderOffsetMinutes ?? 60,
+        reminder_offset_minutes: input.reminderOffsetMinutes ?? DEFAULT_PLAN_REMINDER_OFFSET_MINUTES,
         repeat_rule: input.repeatRule ?? 'none',
         scheduled_date: input.scheduledDate,
         scheduled_time: input.scheduledTime ?? null,
@@ -39,17 +62,17 @@ export class PlanService {
       throw new AppError('Failed to create plan', 500, 'DATABASE_ERROR', { details: error });
     }
 
-    const reminderAt = new Date(new Date(data.due_at).getTime() - (data.reminder_offset_minutes ?? 60) * 60 * 1000);
-    if (reminderAt.getTime() > Date.now()) {
+    const reminderAt = resolvePlanReminderSchedule(data.due_at, data.reminder_offset_minutes);
+    if (reminderAt) {
       await this.reminderService.enqueue({
         actionLabel: t(locale, 'common.openMiniApp'),
         body: data.title,
-        dedupeKey: `plan:${data.id}:${reminderAt.toISOString()}`,
+        dedupeKey: `plan:${data.id}:${reminderAt}`,
         deepLink: `${this.env.TELEGRAM_MINIAPP_URL}?tab=home`,
         entityId: data.id,
         entityType: 'plan',
         kind: 'plan_due',
-        scheduledFor: reminderAt.toISOString(),
+        scheduledFor: reminderAt,
         title: t(locale, 'bot.reminderDue'),
         userId,
       });

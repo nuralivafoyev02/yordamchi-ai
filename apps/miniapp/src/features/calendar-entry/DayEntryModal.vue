@@ -140,7 +140,7 @@ async function submit() {
         description: form.note.trim() || undefined,
         dueAt: buildIso(form.entryDate),
         priority: 'medium',
-        reminderOffsetMinutes: 60,
+        reminderOffsetMinutes: 0,
         repeatRule: 'none',
         scheduledDate: form.entryDate,
         scheduledTime: '09:00',
