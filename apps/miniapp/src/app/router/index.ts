@@ -19,7 +19,7 @@ router.beforeEach((to) => {
   const sessionStore = useSessionStore();
   const role = sessionStore.profile?.role ?? 'user';
 
-  if (to.path === '/admin' && !['admin', 'owner'].includes(role)) {
+  if (to.path === '/admin' && sessionStore.bootstrapLoaded && !['admin', 'owner'].includes(role)) {
     return '/profile';
   }
 

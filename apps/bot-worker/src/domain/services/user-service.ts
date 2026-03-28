@@ -13,6 +13,7 @@ import type {
 } from '@yordamchi/shared';
 import { FREE_PLAN_LIMITS, locales, startOfMonthIso } from '@yordamchi/shared';
 import { AppError } from '../../core/errors/app-error';
+import { parseAdminTelegramIds, type EnvBindings } from '../../core/config/env';
 import { Logger } from '../../core/logger/logger';
 import { assertSupabaseSingle } from '../../lib/supabase-helpers';
 
@@ -25,10 +26,20 @@ interface TelegramActor {
 }
 
 export class UserService {
+  private readonly adminTelegramIds: Set<number>;
+
   constructor(
     private readonly client: SupabaseClient,
     private readonly logger: Logger,
-  ) {}
+    env: Pick<EnvBindings, 'ADMIN_IDS' | 'ADMIN_TELEGRAM_IDS'>,
+  ) {
+    this.adminTelegramIds = parseAdminTelegramIds(env);
+  }
+
+  private resolveAppLocale(value?: string | null): AppLocale | null {
+    const normalized = value?.slice(0, 2);
+    return locales.includes(normalized as AppLocale) ? (normalized as AppLocale) : null;
+  }
 
   async upsertTelegramUser(actor: TelegramActor, timezone: string) {
     const existingUserResponse = await this.client
@@ -43,16 +54,15 @@ export class UserService {
       });
     }
 
-    const existingLocale = typeof existingUserResponse.data?.language_code === 'string' && locales.includes(existingUserResponse.data.language_code as AppLocale)
-      ? (existingUserResponse.data.language_code as AppLocale)
-      : null;
+    const existingLocale = this.resolveAppLocale(existingUserResponse.data?.language_code);
+    const actorLocale = this.resolveAppLocale(actor.language_code);
     const existingTimezone = typeof existingUserResponse.data?.timezone === 'string' && existingUserResponse.data.timezone.length > 0
       ? existingUserResponse.data.timezone
       : null;
 
     const { data, error } = await this.client.rpc('upsert_telegram_user', {
       p_first_name: actor.first_name,
-      p_language_code: existingLocale ?? 'uz',
+      p_language_code: existingLocale ?? actorLocale ?? 'uz',
       p_last_name: actor.last_name ?? null,
       p_telegram_user_id: actor.id,
       p_timezone: existingTimezone ?? timezone,
@@ -124,12 +134,16 @@ export class UserService {
       };
     });
 
+    const resolvedRole = this.adminTelegramIds.has(user.telegram_user_id)
+      ? 'admin'
+      : String(profile.role);
+
     return {
       baseCurrency: String(profile.base_currency ?? 'UZS') as CurrencyCode,
       displayName: String(profile.display_name),
       locale: user.language_code,
       phoneNumber: this.extractPhoneNumber(profile),
-      role: String(profile.role) as UserProfileSnapshot['role'],
+      role: resolvedRole as UserProfileSnapshot['role'],
       subscription: {
         currentPeriodEnd: subscription.current_period_end,
         isPremium: subscription.is_premium,

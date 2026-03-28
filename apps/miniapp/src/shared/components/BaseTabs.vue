@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 interface TabItem {
-  icon: 'finance' | 'home' | 'profile';
+  icon: 'admin' | 'finance' | 'home' | 'profile';
   label: string;
   to: string;
 }
@@ -14,6 +14,10 @@ const props = defineProps<{
 const route = useRoute();
 
 const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
+  admin: [
+    'M12 3 18 5.6v5.4c0 4.3-2.5 8.2-6 10-3.5-1.8-6-5.7-6-10V5.6L12 3Z',
+    'M9.5 12.5 11.2 14.2 14.8 10.6',
+  ],
   finance: [
     'M4 18h16',
     'M7 14l3-3 3 2 4-5',
@@ -31,7 +35,10 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
 
 <template>
   <nav class="tabs-shell">
-    <div class="tabs">
+    <div
+      class="tabs"
+      :style="{ gridTemplateColumns: `repeat(${Math.max(props.items.length, 1)}, minmax(0, 1fr))` }"
+    >
       <router-link
         v-for="item in props.items"
         :key="item.to"
@@ -78,9 +85,8 @@ const iconPaths = computed<Record<TabItem['icon'], string[]>>(() => ({
   border-radius: 24px;
   display: grid;
   gap: 6px;
-  grid-template-columns: repeat(3, 1fr);
   margin: 0 auto;
-  max-width: 460px;
+  max-width: 520px;
   padding: 8px 10px 10px;
   pointer-events: auto;
 }

@@ -1,6 +1,19 @@
+import { t } from '@yordamchi/shared';
 import { miniAppKeyboard } from '../bot/keyboards/common';
 import type { AppContext } from '../core/app-context';
 import { getNextReminderWindow, isWithinQuietHours, reminderSettingEnabled } from './reminder-policy';
+
+const genericReminderTitles = new Set(['Reminder', 'Напоминание', 'Eslatma']);
+
+export function resolveReminderTitle(locale: 'uz' | 'en' | 'ru', storedTitle?: string | null) {
+  const normalizedTitle = storedTitle?.trim();
+
+  if (!normalizedTitle || genericReminderTitles.has(normalizedTitle)) {
+    return t(locale, 'bot.reminderDue');
+  }
+
+  return normalizedTitle;
+}
 
 export async function dispatchReminders(app: AppContext) {
   const reminders = await app.reminderService.claimBatch(crypto.randomUUID(), 30);
@@ -44,9 +57,11 @@ export async function dispatchReminders(app: AppContext) {
         continue;
       }
 
+      const reminderTitle = resolveReminderTitle(user.locale, reminder.title);
+
       await app.telegram.sendMessage(
         user.telegramUserId,
-        `<b>${reminder.title}</b>\n${reminder.body}`,
+        `<b>${reminderTitle}</b>\n${reminder.body}`,
         {
           parse_mode: 'HTML',
           reply_markup: miniAppKeyboard(user.locale, reminder.deep_link ?? app.env.TELEGRAM_MINIAPP_URL),

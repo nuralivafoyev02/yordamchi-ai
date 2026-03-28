@@ -58,11 +58,23 @@ const bearerAuth: MiddlewareHandler<ApiRoute> = async (c, next) => {
 };
 
 const adminOnly: MiddlewareHandler<ApiRoute> = async (c, next) => {
+  const app = c.get('app');
   const session = c.get('session');
+  const profile = await app.userService.getProfileSnapshot(session.app_user_id, resolveSessionTimeZone(session));
 
-  if (!['admin', 'owner'].includes(session.role)) {
+  if (!['admin', 'owner'].includes(profile.role)) {
     throw new AppError('Forbidden', 403, 'FORBIDDEN');
   }
+
+  c.set('session', {
+    ...session,
+    locale: profile.locale,
+    phone_registered: Boolean(profile.phoneNumber),
+    role: profile.role,
+    telegram_user_id: profile.telegramUserId,
+    theme: profile.themePreference,
+    timezone: profile.timezone,
+  });
 
   await next();
 };

@@ -30,7 +30,7 @@ export function buildAppContext(env: EnvBindings, requestId: string) {
     stateService: new StateService(supabase),
     supabase,
     telegram: new TelegramClient(env),
-    userService: new UserService(supabase, logger),
+    userService: new UserService(supabase, logger, env),
   };
 }
 
