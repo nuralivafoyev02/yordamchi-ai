@@ -42,14 +42,17 @@ export async function handleContactRegistration(app: AppContext, message: Telegr
   const userId = await app.userService.upsertTelegramUser(message.from, DEFAULT_TIMEZONE);
   const profile = await app.userService.getProfileSnapshot(userId, DEFAULT_TIMEZONE);
   const locale = profile.locale;
+  const isFirstRegistration = !profile.phoneNumber;
 
   if (message.contact.user_id && message.contact.user_id !== message.from.id) {
     await promptPhoneRegistration(app, message.chat.id, locale, userId, 'bot.phoneOnlySelf');
     return true;
   }
 
+  let normalizedPhoneNumber = message.contact.phone_number;
+
   try {
-    await app.userService.savePhoneNumber(userId, message.contact.phone_number);
+    normalizedPhoneNumber = await app.userService.savePhoneNumber(userId, message.contact.phone_number);
   } catch (error) {
     if (error instanceof AppError && ['INVALID_PHONE_NUMBER', 'PHONE_ALREADY_USED'].includes(error.code)) {
       await promptPhoneRegistration(
@@ -65,6 +68,35 @@ export async function handleContactRegistration(app: AppContext, message: Telegr
     throw error;
   }
   await app.stateService.clear(userId);
+
+  if (isFirstRegistration) {
+    const registrationContext = {
+      displayName: profile.displayName,
+      locale,
+      phoneNumber: normalizedPhoneNumber,
+      telegramUserId: profile.telegramUserId,
+      username: profile.username ?? message.from.username ?? null,
+    };
+
+    await app.logService.botLog({
+      channelLevel: 'SUCCESS',
+      context: registrationContext,
+      event: 'user_registered',
+      level: 'info',
+      message: 'New user registered successfully.',
+      userId,
+    });
+
+    await app.logService.botLog({
+      channelLevel: 'SUCCESS',
+      context: registrationContext,
+      event: 'new_user_welcome',
+      level: 'info',
+      message: "Yangi foydalanuvchi qo'shildi. Tabriklaymiz!",
+      userId,
+    });
+  }
+
   await app.telegram.sendMessage(message.chat.id, t(locale, 'bot.phoneSaved'), {
     reply_markup: removeKeyboard(),
   });
